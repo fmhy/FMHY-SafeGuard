@@ -9,14 +9,7 @@ fmhy.xyz
 
 ! GitHub Projects
 github.com/fmhy
-github.com/fmhy/edit
-github.com/fmhy/FMHY
-github.com/fmhy/FMHYFilterlist
-github.com/fmhy/mix
-github.com/fmhy/bookmarks
-github.com/fmhy/bot
 github.com/taskyland/snowbin
-github.com/fmhy/FMHY-SafeGuard
 
 ! Extensions 
 addons.mozilla.org/en-US/firefox/addon/fmhy-safeguard
