@@ -79,7 +79,6 @@ For questions or support, feel free to open an issue on [GitHub](https://github.
 # 🌐 Quick Links
 - [Download the Extension](https://github.com/fmhy/FMHY-SafeGuard/releases)
 - [Contribute on GitHub](https://github.com/fmhy/FMHY-SafeGuard/pulls)
-- [FMHY Filterlist Project](https://github.com/fmhy/FMHYFilterlist)
 
 # 📜 Credits
 - [FMHY Filterlist](https://github.com/fmhy/FMHYFilterlist), the service used to detect unsafe/potentially unsafe sites, created by FMHY
