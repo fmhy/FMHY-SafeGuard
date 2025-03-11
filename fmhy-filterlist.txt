@@ -8,6 +8,11 @@ guides.fmhy.lol
 fmhy.pages.dev
 fmhy.xyz
 
+! Rentry Backups
+https://rentry.co/FMHY
+https://rentry.co/FMHYbackups
+https://rentry.org/piracy
+
 ! GitHub Projects
 github.com/fmhy
 github.com/fmhy/edit
