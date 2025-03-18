@@ -520,6 +520,9 @@
           </div>
 
           <div class="update-status" id="updateStatus">
+            <svg class="update-icon" viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M12 4V2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12H20C20 16.418 16.418 20 12 20C7.582 20 4 16.418 4 12C4 7.582 7.582 4 12 4Z"/>
+            </svg>
             Next update scheduled for: Checking...
           </div>
         </div>
@@ -559,6 +562,68 @@
           </div>
         </div>
 
+        <!-- Link Highlighting Settings -->
+        <div class="settings-section">
+          <h2 class="section-title">Link Highlighting</h2>
+          <p class="section-description">
+            Visually highlight safe and unsafe links in web pages
+          </p>
+          
+          <div class="settings-grid" style="margin-top: 10px;">
+            <div>
+              <p class="section-description" style="margin: 0;">
+                Highlight safe links (green)
+              </p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="highlightTrustedToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-grid" style="margin-top: 15px;">
+            <div>
+              <p class="section-description" style="margin: 0;">
+                Highlight unsafe links (red)
+              </p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="highlightUntrustedToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-grid" style="margin-top: 15px;">
+            <div>
+              <p class="section-description" style="margin: 0;">
+                Show warning banners next to unsafe links
+              </p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="showWarningBannersToggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="settings-grid" style="margin-top: 15px;">
+            <div>
+              <p class="section-description" style="margin: 0;">
+                Safe link color
+              </p>
+            </div>
+            <input type="color" id="trustedColor" value="#32cd32" style="width: 50px; height: 30px; border: none; border-radius: 4px;">
+          </div>
+          
+          <div class="settings-grid" style="margin-top: 15px;">
+            <div>
+              <p class="section-description" style="margin: 0;">
+                Unsafe link color
+              </p>
+            </div>
+            <input type="color" id="untrustedColor" value="#ff4444" style="width: 50px; height: 30px; border: none; border-radius: 4px;">
+          </div>
+        </div>
+
         <!-- Auto-Update Settings -->
         <div class="settings-section">
           <div class="settings-grid">
@@ -577,12 +642,47 @@
             </div>
           </div>
         </div>
+
+        <!-- Domain Management -->
+        <div class="settings-section">
+          <h2 class="section-title">Domain Management</h2>
+          <p class="section-description">
+            Manually add domains to safe or unsafe lists
+          </p>
+          
+          <div style="display: flex; gap: 20px; margin-top: 15px;">
+            <div style="flex: 1;">
+              <p class="section-description" style="margin-bottom: 5px; font-weight: bold;">
+                Safe Domains (one per line)
+              </p>
+              <textarea id="trustedDomains" rows="6" style="width: 100%; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--section-border); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 14px;"></textarea>
+            </div>
+            
+            <div style="flex: 1;">
+              <p class="section-description" style="margin-bottom: 5px; font-weight: bold;">
+                Unsafe Domains (one per line)
+              </p>
+              <textarea id="untrustedDomains" rows="6" style="width: 100%; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--section-border); border-radius: 8px; padding: 8px; font-family: monospace; font-size: 14px;"></textarea>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Save Button -->
-      <div style="text-align: center">
-        <button class="btn" id="saveSettings">Save Settings</button>
+      <!-- Save Button Section -->
+      <div style="text-align: center; margin-top: 20px;">
+        <button
+          id="saveSettings"
+          class="btn"
+        >
+          Save Settings
+        </button>
       </div>
+
+      <div
+        id="notification"
+        class="notification"
+        style="display: none"
+      ></div>
 
       <div class="footer">
         <p>FMHY SafeGuard <span id="versionNumber"></p>
@@ -593,11 +693,6 @@
           >
         </p>
       </div>
-    </div>
-
-    <!-- Notification Toast -->
-    <div class="notification" id="notification">
-      Settings saved successfully!
     </div>
 
     <script src="settings-page.js"></script>

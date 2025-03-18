@@ -13,6 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const notification = document.getElementById("notification");
   const lastUpdated = document.getElementById("lastUpdated");
   const updateStatus = document.getElementById("updateStatus");
+  const forceRefreshButton = document.getElementById("forceRefresh");
+
+  // Get link highlighting elements
+  const highlightTrustedToggle = document.getElementById(
+    "highlightTrustedToggle"
+  );
+  const highlightUntrustedToggle = document.getElementById(
+    "highlightUntrustedToggle"
+  );
+  const showWarningBannersToggle = document.getElementById(
+    "showWarningBannersToggle"
+  );
+  const trustedColor = document.getElementById("trustedColor");
+  const untrustedColor = document.getElementById("untrustedColor");
+
+  // Get domain management elements
+  const trustedDomains = document.getElementById("trustedDomains");
+  const untrustedDomains = document.getElementById("untrustedDomains");
 
   // Theme application function
   function applyTheme(theme) {
@@ -106,25 +124,51 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update the UI with next update time
   async function updateNextUpdateStatus() {
     try {
-      const stats = await browserAPI.storage.local.get({
+      // Get both lastUpdated and updateFrequency in a single storage call
+      const data = await browserAPI.storage.local.get({
         lastUpdated: null,
-      });
-      const settings = await browserAPI.storage.sync.get({
         updateFrequency: "daily",
       });
 
+      // Use the stored frequency setting directly
       const nextUpdateText = calculateNextUpdate(
-        stats.lastUpdated,
-        settings.updateFrequency
+        data.lastUpdated,
+        data.updateFrequency
       );
 
       if (updateStatus) {
-        updateStatus.innerHTML = `
-                <svg class="update-icon" viewBox="0 0 24 24" width="16" height="16">
-                    <path fill="currentColor" d="M12 4V2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12H20C20 16.418 16.418 20 12 20C7.582 20 4 16.418 4 12C4 7.582 7.582 4 12 4Z"/>
-                </svg>
-                Next update ${nextUpdateText}
-            `;
+        // Clear current content
+        while (updateStatus.firstChild) {
+          updateStatus.removeChild(updateStatus.firstChild);
+        }
+
+        // Add spinning icon
+        const svgIcon = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
+        svgIcon.setAttribute("class", "update-icon");
+        svgIcon.setAttribute("viewBox", "0 0 24 24");
+        svgIcon.setAttribute("width", "16");
+        svgIcon.setAttribute("height", "16");
+
+        const path = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
+        path.setAttribute("fill", "currentColor");
+        path.setAttribute(
+          "d",
+          "M12 4V2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12H20C20 16.418 16.418 20 12 20C7.582 20 4 16.418 4 12C4 7.582 7.582 4 12 4Z"
+        );
+
+        svgIcon.appendChild(path);
+        updateStatus.appendChild(svgIcon);
+
+        // Add text
+        updateStatus.appendChild(
+          document.createTextNode(`Next update ${nextUpdateText}`)
+        );
       }
     } catch (error) {
       console.error("Error updating next update status:", error);
@@ -170,19 +214,67 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load settings function
   async function loadSettings() {
     try {
-      const savedSettings = await browserAPI.storage.sync.get({
-        theme: "system",
-        warningPage: true,
-        updateFrequency: "daily",
-      });
+      const settings = await browserAPI.storage.local.get([
+        "theme",
+        "showWarning",
+        "updateFrequency",
+        "lastUpdated",
+        "nextUpdate",
+        "highlightTrusted",
+        "highlightUntrusted",
+        "showWarningBanners",
+        "trustedColor",
+        "untrustedColor",
+        "userTrustedDomains",
+        "userUntrustedDomains",
+      ]);
 
-      if (themeSelect) themeSelect.value = savedSettings.theme;
-      if (warningToggle) warningToggle.checked = savedSettings.warningPage;
-      if (updateFrequency)
-        updateFrequency.value = savedSettings.updateFrequency;
+      console.log("Loaded settings:", settings);
 
-      applyTheme(savedSettings.theme);
-      await loadFilterlistStats();
+      themeSelect.value = settings.theme || "system";
+      applyTheme(settings.theme || "system");
+
+      warningToggle.checked = settings.showWarning !== false;
+
+      // Set updateFrequency with fallback to "daily"
+      updateFrequency.value = settings.updateFrequency || "daily";
+      console.log("Set updateFrequency to:", updateFrequency.value);
+
+      // Set link highlighting settings
+      highlightTrustedToggle.checked = settings.highlightTrusted !== false;
+      highlightUntrustedToggle.checked = settings.highlightUntrusted !== false;
+      showWarningBannersToggle.checked = settings.showWarningBanners !== false;
+
+      if (settings.trustedColor) {
+        trustedColor.value = settings.trustedColor;
+      }
+
+      if (settings.untrustedColor) {
+        untrustedColor.value = settings.untrustedColor;
+      }
+
+      // Set domain lists
+      if (
+        settings.userTrustedDomains &&
+        Array.isArray(settings.userTrustedDomains)
+      ) {
+        trustedDomains.value = settings.userTrustedDomains.join("\n");
+      }
+
+      if (
+        settings.userUntrustedDomains &&
+        Array.isArray(settings.userUntrustedDomains)
+      ) {
+        untrustedDomains.value = settings.userUntrustedDomains.join("\n");
+      }
+
+      if (settings.lastUpdated) {
+        lastUpdated.textContent = formatDate(settings.lastUpdated);
+      }
+
+      if (settings.nextUpdate) {
+        updateNextUpdateStatus();
+      }
     } catch (error) {
       console.error("Error loading settings:", error);
       showNotification("Error loading settings", true);
@@ -207,46 +299,105 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * Parse domains from textarea
+   * @param {string} text - Textarea content
+   * @returns {string[]} - Array of normalized domains
+   */
+  function parseDomainList(text) {
+    if (!text) return [];
+
+    return text
+      .split("\n")
+      .map((line) => line.trim().toLowerCase())
+      .filter((line) => line && !line.startsWith("#") && !line.startsWith("//"))
+      .map((domain) => {
+        // Remove protocols and paths
+        if (domain.includes("://")) {
+          try {
+            return new URL(domain).hostname.replace(/^www\./, "");
+          } catch (e) {
+            return domain;
+          }
+        }
+        // Just remove www prefix if no protocol
+        return domain.replace(/^www\./, "");
+      });
+  }
+
   // Save settings function
   async function saveSettings() {
     try {
-      const settings = {
+      const newSettings = {
         theme: themeSelect.value,
-        warningPage: warningToggle.checked,
+        showWarning: warningToggle.checked,
         updateFrequency: updateFrequency.value,
+        highlightTrusted: highlightTrustedToggle.checked,
+        highlightUntrusted: highlightUntrustedToggle.checked,
+        showWarningBanners: showWarningBannersToggle.checked,
+        trustedColor: trustedColor.value,
+        untrustedColor: untrustedColor.value,
+        userTrustedDomains: parseDomainList(trustedDomains.value),
+        userUntrustedDomains: parseDomainList(untrustedDomains.value),
       };
 
-      console.log("Saving settings:", settings);
+      // Save all settings explicitly to local storage
+      await browserAPI.storage.local.set(newSettings);
 
-      // Save settings to storage
-      await browserAPI.storage.sync.set(settings);
-      showNotification("Settings saved successfully!");
-      applyTheme(settings.theme);
-      await updateNextUpdateStatus();
-
-      console.log(
-        "Settings saved to storage, sending message to background script..."
+      // Calculate the next update time based on the new frequency
+      const nextUpdate = calculateNextUpdate(
+        new Date().toISOString(),
+        newSettings.updateFrequency
       );
 
-      // Send updated settings to background script
-      await browserAPI.runtime.sendMessage({
-        type: "settingsUpdated",
-        settings: settings,
+      // Update lastUpdated to now and store the next update time
+      await browserAPI.storage.local.set({
+        nextUpdate,
+        lastUpdated: new Date().toISOString(),
       });
 
-      console.log(
-        "Settings update message sent to background script successfully."
-      );
+      // Tell the background script to update its alarm
+      await browserAPI.runtime.sendMessage({ action: "updateAlarm" });
+
+      // Apply settings to all open tabs
+      await browserAPI.runtime.sendMessage({ action: "refreshAllTabs" });
+
+      // Show notification and update status
+      showNotification("Settings saved and applied to all tabs!");
+      await updateNextUpdateStatus();
     } catch (error) {
-      console.error("Error occurred during saveSettings:", error);
-      showNotification("Error saving settings", true);
+      console.error("Error saving settings:", error);
+      showNotification("Error saving settings. Please try again.", true);
     }
   }
 
-  // Event Listeners
-  if (saveButton) {
-    saveButton.addEventListener("click", saveSettings);
-  }
+  // For debugging - can be called from the browser console
+  window.checkCurrentSettings = async function () {
+    try {
+      const data = await browserAPI.storage.local.get(null); // Get all storage
+      console.log("All stored settings:", data);
+      return data;
+    } catch (error) {
+      console.error("Error retrieving settings:", error);
+      return null;
+    }
+  };
+
+  // Event listeners
+  document.addEventListener("DOMContentLoaded", async () => {
+    // First load settings to ensure we have the correct values
+    await loadSettings();
+    // Then load filter stats
+    await loadFilterlistStats();
+    // Explicitly update the update status to ensure it's not stuck
+    await updateNextUpdateStatus();
+
+    // Log current settings for debugging
+    console.log("Current update frequency:", updateFrequency.value);
+    await window.checkCurrentSettings();
+  });
+
+  saveButton.addEventListener("click", saveSettings);
 
   if (themeSelect) {
     themeSelect.addEventListener("change", (e) => {
@@ -269,5 +420,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   setInterval(updateNextUpdateStatus, 60000);
-  loadSettings();
 });

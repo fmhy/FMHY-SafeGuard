@@ -52,13 +52,30 @@ function extractUrlsFromMarkdown(markdown) {
 }
 
 function extractUrlsFromBookmarks(html) {
-  const urlRegex = /<A HREF="(https?:\/\/[^\s"]+)"/g;
-  let matches;
-  const urls = [];
-  while ((matches = urlRegex.exec(html)) !== null) {
-    urls.push(matches[1]);
+  console.log("Extracting URLs from bookmarks HTML...");
+
+  // Try multiple regex patterns to handle different bookmark formats
+  const patterns = [
+    /<A HREF="(https?:\/\/[^\s"]+)"/gi, // Standard format
+    /<a href="(https?:\/\/[^\s"]+)"/gi, // Lowercase format
+    /href=["'](https?:\/\/[^\s"']+)["']/gi, // Generic href format
+    /<DT><A[^>]*HREF="(https?:\/\/[^\s"]+)"[^>]*>([^<]+)/gi, // Full bookmark format
+  ];
+
+  const allUrls = [];
+
+  // Try each pattern
+  for (const pattern of patterns) {
+    let matches;
+    while ((matches = pattern.exec(html)) !== null) {
+      if (matches[1]) {
+        allUrls.push(matches[1]);
+      }
+    }
   }
-  return urls;
+
+  console.log(`Extracted ${allUrls.length} URLs from bookmarks HTML`);
+  return allUrls;
 }
 
 function normalizeUrl(url) {
@@ -71,12 +88,24 @@ function normalizeUrl(url) {
     if (!/^https?:\/\//i.test(url)) {
       url = `https://${url}`;
     }
+
     const urlObj = new URL(url);
+
+    // Remove 'www.' prefix consistently
+    if (urlObj.hostname.startsWith("www.")) {
+      urlObj.hostname = urlObj.hostname.substring(4);
+    }
+
+    // Clear search parameters and hash
     urlObj.search = "";
     urlObj.hash = "";
-    return urlObj.href.replace(/\/+$/, "");
+
+    // Remove trailing slash consistently
+    let normalized = urlObj.href.replace(/\/+$/, "");
+
+    return normalized;
   } catch (error) {
-    console.warn(`Invalid URL skipped: ${url}`);
+    console.warn(`Invalid URL skipped: ${url} - ${error.message}`);
     return null;
   }
 }
@@ -186,9 +215,10 @@ async function fetchSafeSites() {
     // Normalize URLs and remove duplicates
     safeSites = [...new Set(allUrls.map((url) => normalizeUrl(url.trim())))];
 
-    // Store safe site count for use in the extension's storage
+    // Store safe sites for content script use
     await browserAPI.storage.local.set({
       safeSiteCount: safeSites.length,
+      safeSiteList: safeSites,
     });
 
     console.log("Stored safe site count:", safeSites.length);
@@ -205,6 +235,14 @@ async function fetchStarredSites() {
       const html = await response.text();
       const urls = extractUrlsFromBookmarks(html);
       starredSites = [...new Set([...urls.map(normalizeUrl), ...starredSites])];
+
+      // Store starred sites in storage for persistence
+      await browserAPI.storage.local.set({
+        starredSites: starredSites,
+        starredSiteCount: starredSites.length,
+      });
+
+      console.log(`Stored ${starredSites.length} starred sites`);
     }
   } catch (error) {
     console.error("Error fetching starred sites:", error);
@@ -277,22 +315,44 @@ function checkSiteAndUpdatePageAction(tabId, url) {
   const normalizedUrl = normalizeUrl(url.trim());
   const rootUrl = extractRootUrl(normalizedUrl);
 
-  // Detect if the URL is an internal extension page
-  const warningPageUrl = browserAPI.runtime.getURL("pub/warning-page.html");
-  if (url.startsWith(warningPageUrl)) {
-    // Skip if already on the warning page to avoid looping
+  // Detect if the URL is an internal extension page (settings page or warning page)
+  const extUrlBase = browserAPI.runtime.getURL("");
+  if (url.startsWith(extUrlBase)) {
+    console.log("Detected extension page: " + url);
     updatePageAction("extension_page", tabId);
     return;
   }
 
-  // Check if the full URL is starred or has a specific status
-  let status = getStatusFromLists(normalizedUrl);
+  // Create variations of the URL to check
+  // Some URLs might be stored with or without trailing slashes or www
+  let status = "no_data";
   let matchedUrl = normalizedUrl;
 
-  // If no specific match for the full URL, check the root URL
+  // First check the full URL
+  status = getStatusFromLists(normalizedUrl);
+
+  // If not found, try with trailing slash
+  if (status === "no_data" && !normalizedUrl.endsWith("/")) {
+    status = getStatusFromLists(normalizedUrl + "/");
+    if (status !== "no_data") matchedUrl = normalizedUrl + "/";
+  }
+
+  // If not found, try without trailing slash
+  if (status === "no_data" && normalizedUrl.endsWith("/")) {
+    status = getStatusFromLists(normalizedUrl.slice(0, -1));
+    if (status !== "no_data") matchedUrl = normalizedUrl.slice(0, -1);
+  }
+
+  // If still no match, check the root URL
   if (status === "no_data") {
     status = getStatusFromLists(rootUrl);
-    matchedUrl = rootUrl;
+    if (status !== "no_data") matchedUrl = rootUrl;
+
+    // Try root URL with trailing slash
+    if (status === "no_data" && !rootUrl.endsWith("/")) {
+      status = getStatusFromLists(rootUrl + "/");
+      if (status !== "no_data") matchedUrl = rootUrl + "/";
+    }
   }
 
   // Apply the correct icon status to the tab
@@ -380,11 +440,99 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function getStatusFromLists(url) {
+  // Skip null, empty or non-string URLs
+  if (!url || typeof url !== "string") {
+    console.warn(`getStatusFromLists: Invalid URL provided: ${url}`);
+    return "no_data";
+  }
+
+  // Create URL variations to check consistently across all lists
+  const originalUrl = url;
+  const urlWithSlash = url.endsWith("/") ? url : url + "/";
+  const urlWithoutSlash = url.endsWith("/") ? url.slice(0, -1) : url;
+  const urlVariations = [originalUrl, urlWithSlash, urlWithoutSlash];
+
+  // Special handling for repository hosting sites
+  const urlObj = new URL(url);
+  const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net"].some(
+    (domain) =>
+      urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
+  );
+
+  // For repository sites, we need to check the full path, not just the domain
+  if (isRepoSite) {
+    // Check unsafe and potentially unsafe lists first using regex
+    if (unsafeSitesRegex?.test(url)) return "unsafe";
+    if (potentiallyUnsafeSitesRegex?.test(url)) return "potentially_unsafe";
+    if (fmhySitesRegex?.test(url)) return "fmhy";
+
+    // For repo sites, check for exact matches in starred and safe lists
+    // Skip domain-only matching which we do later in the function
+    for (const variant of urlVariations) {
+      if (starredSites.includes(variant)) return "starred";
+    }
+
+    for (const variant of urlVariations) {
+      if (safeSites.includes(variant)) return "safe";
+    }
+
+    // If no match found for the specific repository, return no_data
+    // We skip the domain-level matching for repository hosting sites
+    return "no_data";
+  }
+
+  // For non-repository sites, continue with standard checks
   if (unsafeSitesRegex?.test(url)) return "unsafe";
   if (potentiallyUnsafeSitesRegex?.test(url)) return "potentially_unsafe";
   if (fmhySitesRegex?.test(url)) return "fmhy";
-  if (starredSites.includes(url)) return "starred";
-  if (safeSites.includes(url)) return "safe";
+
+  // Check for starred status with all URL variations - highest priority after unsafe/fmhy
+  for (const variant of urlVariations) {
+    if (starredSites.includes(variant)) {
+      return "starred";
+    }
+  }
+
+  // Check for safe status with all URL variations - lower priority than starred
+  for (const variant of urlVariations) {
+    if (safeSites.includes(variant)) {
+      return "safe";
+    }
+  }
+
+  // Try matching the domain part only for safe sites
+  try {
+    const domain = urlObj.hostname;
+
+    // First check if domain matches any starred site (priority)
+    for (const starredUrl of starredSites) {
+      try {
+        const starredUrlObj = new URL(starredUrl);
+        if (starredUrlObj.hostname === domain) {
+          return "starred";
+        }
+      } catch (e) {
+        // Skip invalid URLs in starredSites
+        continue;
+      }
+    }
+
+    // Then check for safe site domain matches
+    for (const safeUrl of safeSites) {
+      try {
+        const safeUrlObj = new URL(safeUrl);
+        if (safeUrlObj.hostname === domain) {
+          return "safe";
+        }
+      } catch (e) {
+        // Skip invalid URLs in safeSites
+        continue;
+      }
+    }
+  } catch (e) {
+    // If URL parsing fails, skip domain matching
+  }
+
   return "no_data";
 }
 
@@ -480,47 +628,183 @@ browserAPI.tabs.onRemoved.addListener((tabId) => {
   browserAPI.storage.local.remove(`proceedTab_${tabId}`);
 });
 
-// Initialize extension
-async function initializeExtension() {
-  try {
-    const {
-      unsafeFilterCount,
-      potentiallyUnsafeFilterCount,
-      fmhyFilterCount,
-      unsafeSites,
-      potentiallyUnsafeSites,
-      fmhySites,
-    } = await browserAPI.storage.local.get([
-      "unsafeFilterCount",
-      "potentiallyUnsafeFilterCount",
-      "fmhyFilterCount",
-      "unsafeSites",
-      "potentiallyUnsafeSites",
-      "fmhySites",
-    ]);
+// Initialize settings with defaults if needed
+async function initializeSettings() {
+  const defaultSettings = {
+    theme: "system",
+    showWarning: true,
+    updateFrequency: "daily",
+    highlightTrusted: true,
+    highlightUntrusted: true,
+    showWarningBanners: true,
+    trustedColor: "#32cd32",
+    untrustedColor: "#ff4444",
+    userTrustedDomains: [],
+    userUntrustedDomains: [],
+  };
 
-    // Check if data is available in storage and load it into memory
-    if (unsafeSites && potentiallyUnsafeSites && fmhySites) {
-      unsafeSitesRegex = generateRegexFromList(unsafeSites);
-      potentiallyUnsafeSitesRegex = generateRegexFromList(
-        potentiallyUnsafeSites
-      );
-      fmhySitesRegex = generateRegexFromList(fmhySites);
-      console.log("Loaded filter lists from storage.");
-    } else {
-      // If data isn't in storage, fetch it
+  // Check for existing settings
+  const existingSettings = await browserAPI.storage.local.get(
+    Object.keys(defaultSettings)
+  );
+
+  // Merge with defaults for any missing settings
+  const mergedSettings = { ...defaultSettings, ...existingSettings };
+
+  // Save the merged settings
+  await browserAPI.storage.local.set(mergedSettings);
+
+  console.log("Settings initialized:", mergedSettings);
+}
+
+// Add well-known safe sites manually as a fallback
+function addKnownSafeSites() {
+  // Known safe sites from FMHY that should be recognized
+  const knownSafeSites = [
+    // Common gaming sites
+    "https://fitgirl-repacks.site",
+    "https://pcgamestorrents.com",
+    "https://steamunlocked.net",
+    "https://gog-games.com",
+
+    // Common tools/software sites
+    // GitHub URLs should be evaluated per repository, not by domain
+    "https://gitlab.com",
+    "https://sourceforge.net",
+
+    // Media streaming/download sites
+    "https://archive.org",
+    "https://nyaa.si",
+    "https://rutracker.org",
+    "https://1337x.to",
+
+    // Known safe GitHub repositories
+    "https://github.com/hydralauncher/hydra",
+
+    // Add more known safe sites here as needed
+  ];
+
+  // Process and add to safeSites
+  const normalizedSites = knownSafeSites
+    .map((site) => normalizeUrl(site))
+    .filter((site) => site);
+
+  // Add to safeSites if not already present
+  for (const site of normalizedSites) {
+    if (!safeSites.includes(site)) {
+      console.log(`Adding known safe site: ${site}`);
+      safeSites.push(site);
+    }
+  }
+
+  console.log(`Added ${normalizedSites.length} known safe sites as fallback`);
+}
+
+// Extension initialization
+async function initializeExtension() {
+  console.log("Initializing extension...");
+
+  try {
+    await initializeSettings();
+
+    // Check if we need to update
+    if (await shouldUpdate()) {
       await fetchFilterLists();
+      await fetchSafeSites();
+      await fetchStarredSites();
+    } else {
+      // Load data from storage
+      try {
+        const storedData = await browserAPI.storage.local.get([
+          "unsafeSites",
+          "potentiallyUnsafeSites",
+          "fmhySites",
+          "starredSites",
+          "safeSiteList",
+        ]);
+
+        if (storedData.unsafeSites && storedData.unsafeSites.length > 0) {
+          unsafeSitesRegex = generateRegexFromList(storedData.unsafeSites);
+        }
+
+        if (
+          storedData.potentiallyUnsafeSites &&
+          storedData.potentiallyUnsafeSites.length > 0
+        ) {
+          potentiallyUnsafeSitesRegex = generateRegexFromList(
+            storedData.potentiallyUnsafeSites
+          );
+        }
+
+        if (storedData.fmhySites && storedData.fmhySites.length > 0) {
+          fmhySitesRegex = generateRegexFromList(storedData.fmhySites);
+        }
+
+        // Load starred sites from storage
+        if (storedData.starredSites && storedData.starredSites.length > 0) {
+          starredSites = storedData.starredSites;
+          console.log(
+            `Loaded ${starredSites.length} starred sites from storage`
+          );
+        } else {
+          // If no starred sites in storage, fetch them now
+          await fetchStarredSites();
+        }
+
+        // Load safe sites from storage
+        if (storedData.safeSiteList && storedData.safeSiteList.length > 0) {
+          safeSites = storedData.safeSiteList;
+          console.log(`Loaded ${safeSites.length} safe sites from storage`);
+        } else {
+          // If no safe sites in storage, fetch them now
+          await fetchSafeSites();
+        }
+      } catch (error) {
+        console.error("Error loading from storage:", error);
+      }
     }
 
-    // Fetch safe and starred sites, and set up the update schedule
-    await fetchSafeSites();
-    await fetchStarredSites();
+    // Add fallback known sites - only for safe sites, not for starred
+    addKnownSafeSites();
+
+    // Set up the update schedule
     await setupUpdateSchedule();
 
     console.log("Extension initialized successfully.");
   } catch (error) {
-    console.error("Error during extension initialization:", error);
+    console.error("Error during initialization:", error);
   }
 }
+
+// Extension message handling
+browserAPI.runtime.onMessage.addListener(
+  async (message, sender, sendResponse) => {
+    if (message.action === "updateAlarm") {
+      await setupUpdateSchedule();
+      return true;
+    }
+
+    if (message.action === "refreshAllTabs") {
+      // Get all tabs
+      const tabs = await browserAPI.tabs.query({});
+
+      // Send refresh message to all tabs
+      for (const tab of tabs) {
+        try {
+          await browserAPI.tabs.sendMessage(tab.id, {
+            action: "refreshSettings",
+          });
+        } catch (error) {
+          // Content script might not be loaded in some tabs, ignore errors
+          console.log(`Could not refresh tab ${tab.id}: ${error.message}`);
+        }
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+);
 
 initializeExtension();
