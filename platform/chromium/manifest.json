@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "FMHY SafeGuard",
     "author": "Kenneth Hendricks & contributors",
-    "version": "1.1.8",
+    "version": "1.1.9",
     "icons": {
         "128": "res/ext_icon_144.png"
     },
@@ -21,6 +21,13 @@
     "background": {
         "service_worker": "js/background.js"
     },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["js/content.js"],
+            "run_at": "document_idle"
+        }
+    ],
     "description": "An extension that detects starred, safe, unsafe or potentially unsafe sites using the FMHY Filterlist.",
     "minimum_chrome_version": "100"
 }
