@@ -45,6 +45,37 @@ let safeSites = [];
 let starredSites = [];
 const approvedUrls = new Map(); // Map to store approved URLs per tab
 
+// List of search engines to check against
+const searchEngines = [
+  "google.com",
+  "google.", // Covers all Google country domains like google.co.uk, google.fr, etc.
+  "bing.com",
+  "duckduckgo.com",
+  "librey.org",
+  "4get.ca",
+  "mojeek.com",
+  "qwant.com",
+  "swisscows.com",
+  "yacy.net",
+  "startpage.com",
+  "search.brave.com",
+  "ekoru.org",
+  "gibiru.com",
+  "searx.org",
+  "searx.", // Covers all SearX instances
+  "searxng.", // Covers all SearXNG instances
+  "whoogle.", // Covers all Whoogle instances
+  "metager.org",
+  "ecosia.org",
+  "yandex.com",
+  "yandex.", // Covers all Yandex country domains
+  "yahoo.com",
+  "yahoo.", // Covers all Yahoo country domains
+  "baidu.com",
+  "naver.com",
+  "seznam.cz",
+];
+
 // Helper Functions
 function extractUrlsFromMarkdown(markdown) {
   const urlRegex = /https?:\/\/[^\s)]+/g;
@@ -139,6 +170,20 @@ function extractUrlsFromFilterList(text) {
     .filter((line) => line && !line.startsWith("!"))
     .map((line) => normalizeUrl(line))
     .filter((url) => url !== null);
+}
+
+// Function to check if a URL is a search engine
+function isSearchEngine(url) {
+  try {
+    const urlObj = new URL(url);
+    return searchEngines.some(
+      (domain) =>
+        urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
+    );
+  } catch (error) {
+    console.error("Error checking search engine:", error);
+    return false;
+  }
 }
 
 // Fetch and Update Functions
@@ -437,6 +482,132 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ status, matchedUrl });
     return true;
   }
+
+  if (message.action === "getSiteStatus") {
+    try {
+      // Get the URL from the message
+      const url = message.url;
+      if (!url) {
+        sendResponse({ status: "no_data", matchedUrl: null });
+        return true;
+      }
+
+      console.log(`getSiteStatus: checking status for ${url}`);
+
+      // Normalize the URL
+      const normalizedUrl = normalizeUrl(url);
+      if (!normalizedUrl) {
+        sendResponse({ status: "no_data", matchedUrl: null });
+        return true;
+      }
+
+      // Extract domain for domain-level checking
+      const urlObj = new URL(normalizedUrl);
+      const domain = urlObj.hostname;
+
+      // First check if it's an extension page
+      if (url.startsWith(browserAPI.runtime.getURL(""))) {
+        sendResponse({ status: "extension_page", matchedUrl: url });
+        return true;
+      }
+
+      // Special handling for repository sites
+      const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net"].some(
+        (domain) =>
+          urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
+      );
+
+      // Variables to track status and matched URL
+      let status = "no_data";
+      let matchedUrl = null;
+
+      // Check full URL first
+      if (unsafeSitesRegex?.test(normalizedUrl)) {
+        status = "unsafe";
+        matchedUrl = normalizedUrl;
+      } else if (potentiallyUnsafeSitesRegex?.test(normalizedUrl)) {
+        status = "potentially_unsafe";
+        matchedUrl = normalizedUrl;
+      } else if (fmhySitesRegex?.test(normalizedUrl)) {
+        status = "fmhy";
+        matchedUrl = normalizedUrl;
+      } else if (starredSites.includes(normalizedUrl)) {
+        status = "starred";
+        matchedUrl = normalizedUrl;
+      } else if (safeSites.includes(normalizedUrl)) {
+        status = "safe";
+        matchedUrl = normalizedUrl;
+      }
+
+      // If no match for full URL and it's a repository site, don't try domain matching
+      if (status === "no_data" && isRepoSite) {
+        console.log(`No match for repository URL: ${normalizedUrl}`);
+        sendResponse({ status: "no_data", matchedUrl: normalizedUrl });
+        return true;
+      }
+
+      // If no match for full URL and it's a regular site, try domain-level matching
+      if (status === "no_data" && !isRepoSite) {
+        console.log(`No match for full URL, trying domain: ${domain}`);
+
+        // Check domain against regex patterns
+        if (unsafeSitesRegex?.test(domain)) {
+          status = "unsafe";
+          matchedUrl = `https://${domain}`;
+        } else if (potentiallyUnsafeSitesRegex?.test(domain)) {
+          status = "potentially_unsafe";
+          matchedUrl = `https://${domain}`;
+        } else if (fmhySitesRegex?.test(domain)) {
+          status = "fmhy";
+          matchedUrl = `https://${domain}`;
+        }
+
+        // Check domain against starred and safe lists
+        if (status === "no_data") {
+          for (const starredUrl of starredSites) {
+            try {
+              const starredUrlObj = new URL(starredUrl);
+              if (starredUrlObj.hostname === domain) {
+                status = "starred";
+                matchedUrl = starredUrl;
+                break;
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+        }
+
+        if (status === "no_data") {
+          for (const safeUrl of safeSites) {
+            try {
+              const safeUrlObj = new URL(safeUrl);
+              if (safeUrlObj.hostname === domain) {
+                status = "safe";
+                matchedUrl = safeUrl;
+                break;
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+        }
+      }
+
+      console.log(
+        `getSiteStatus result for ${url}: ${status}, matched: ${matchedUrl}`
+      );
+      sendResponse({ status: status, matchedUrl: matchedUrl });
+    } catch (error) {
+      console.error("Error in getSiteStatus handler:", error);
+      sendResponse({
+        status: "no_data",
+        matchedUrl: null,
+        error: error.message,
+      });
+    }
+    return true; // Keep the message channel open for async response
+  }
 });
 
 function getStatusFromLists(url) {
@@ -446,94 +617,62 @@ function getStatusFromLists(url) {
     return "no_data";
   }
 
-  // Create URL variations to check consistently across all lists
-  const originalUrl = url;
-  const urlWithSlash = url.endsWith("/") ? url : url + "/";
-  const urlWithoutSlash = url.endsWith("/") ? url.slice(0, -1) : url;
-  const urlVariations = [originalUrl, urlWithSlash, urlWithoutSlash];
+  try {
+    // Special handling for repository hosting sites
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+    const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net"].some(
+      (domain) =>
+        urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
+    );
 
-  // Special handling for repository hosting sites
-  const urlObj = new URL(url);
-  const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net"].some(
-    (domain) =>
-      urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
-  );
+    // For repository sites, need exact path matching
+    if (isRepoSite) {
+      // Check unsafe and potentially unsafe first
+      if (unsafeSitesRegex?.test(url)) return "unsafe";
+      if (potentiallyUnsafeSitesRegex?.test(url)) return "potentially_unsafe";
+      if (fmhySitesRegex?.test(url)) return "fmhy";
+      if (starredSites.includes(url)) return "starred";
+      if (safeSites.includes(url)) return "safe";
+      return "no_data"; // No domain-only matches for repos
+    }
 
-  // For repository sites, we need to check the full path, not just the domain
-  if (isRepoSite) {
-    // Check unsafe and potentially unsafe lists first using regex
+    // For normal sites, direct checks first (full URL)
     if (unsafeSitesRegex?.test(url)) return "unsafe";
     if (potentiallyUnsafeSitesRegex?.test(url)) return "potentially_unsafe";
     if (fmhySitesRegex?.test(url)) return "fmhy";
+    if (starredSites.includes(url)) return "starred";
+    if (safeSites.includes(url)) return "safe";
 
-    // For repo sites, check for exact matches in starred and safe lists
-    // Skip domain-only matching which we do later in the function
-    for (const variant of urlVariations) {
-      if (starredSites.includes(variant)) return "starred";
-    }
+    // Then check domain-level
+    if (unsafeSitesRegex?.test(domain)) return "unsafe";
+    if (potentiallyUnsafeSitesRegex?.test(domain)) return "potentially_unsafe";
+    if (fmhySitesRegex?.test(domain)) return "fmhy";
 
-    for (const variant of urlVariations) {
-      if (safeSites.includes(variant)) return "safe";
-    }
-
-    // If no match found for the specific repository, return no_data
-    // We skip the domain-level matching for repository hosting sites
-    return "no_data";
-  }
-
-  // For non-repository sites, continue with standard checks
-  if (unsafeSitesRegex?.test(url)) return "unsafe";
-  if (potentiallyUnsafeSitesRegex?.test(url)) return "potentially_unsafe";
-  if (fmhySitesRegex?.test(url)) return "fmhy";
-
-  // Check for starred status with all URL variations - highest priority after unsafe/fmhy
-  for (const variant of urlVariations) {
-    if (starredSites.includes(variant)) {
-      return "starred";
-    }
-  }
-
-  // Check for safe status with all URL variations - lower priority than starred
-  for (const variant of urlVariations) {
-    if (safeSites.includes(variant)) {
-      return "safe";
-    }
-  }
-
-  // Try matching the domain part only for safe sites
-  try {
-    const domain = urlObj.hostname;
-
-    // First check if domain matches any starred site (priority)
+    // Try domain-level checks for starred and safe
     for (const starredUrl of starredSites) {
       try {
         const starredUrlObj = new URL(starredUrl);
-        if (starredUrlObj.hostname === domain) {
-          return "starred";
-        }
+        if (starredUrlObj.hostname === domain) return "starred";
       } catch (e) {
-        // Skip invalid URLs in starredSites
         continue;
       }
     }
 
-    // Then check for safe site domain matches
     for (const safeUrl of safeSites) {
       try {
         const safeUrlObj = new URL(safeUrl);
-        if (safeUrlObj.hostname === domain) {
-          return "safe";
-        }
+        if (safeUrlObj.hostname === domain) return "safe";
       } catch (e) {
-        // Skip invalid URLs in safeSites
         continue;
       }
     }
-  } catch (e) {
-    // If URL parsing fails, skip domain matching
-  }
 
-  return "no_data";
+    return "no_data";
+  } catch (e) {
+    console.warn(`Error in getStatusFromLists: ${e.message}`);
+    return "no_data";
+  }
 }
 
 async function openWarningPage(tabId, unsafeUrl) {
@@ -567,31 +706,6 @@ async function openWarningPage(tabId, unsafeUrl) {
   browserAPI.tabs.update(tabId, { url: warningPageUrl });
 }
 
-// Add listener for approval from the warning page
-browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "approveSite") {
-    const { tabId, url } = message;
-    const rootUrl = extractRootUrl(url);
-
-    // Fetch existing approved URLs from storage
-    browserAPI.storage.local.get("approvedUrls", (result) => {
-      const approvedUrls = result.approvedUrls || [];
-
-      // Add the root URL if not already approved
-      if (!approvedUrls.includes(rootUrl)) {
-        approvedUrls.push(rootUrl);
-        browserAPI.storage.local.set({ approvedUrls });
-        console.log(`approveSite: ${rootUrl} approved globally.`);
-      }
-
-      // Set the toolbar icon to "unsafe" immediately
-      updatePageAction("unsafe", tabId);
-      sendResponse({ status: "approved" });
-    });
-  }
-  return true;
-});
-
 // Listen for settings updates from the settings page
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "settingsUpdated") {
@@ -601,8 +715,10 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-browserAPI.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+// Listen for tab updates
+browserAPI.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
+    // Always check the site status
     checkSiteAndUpdatePageAction(tabId, tab.url);
   }
 });
@@ -806,5 +922,30 @@ browserAPI.runtime.onMessage.addListener(
     return false;
   }
 );
+
+// Add listener for approval from the warning page
+browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "approveSite") {
+    const { tabId, url } = message;
+    const rootUrl = extractRootUrl(url);
+
+    // Fetch existing approved URLs from storage
+    browserAPI.storage.local.get("approvedUrls", (result) => {
+      const approvedUrls = result.approvedUrls || [];
+
+      // Add the root URL if not already approved
+      if (!approvedUrls.includes(rootUrl)) {
+        approvedUrls.push(rootUrl);
+        browserAPI.storage.local.set({ approvedUrls });
+        console.log(`approveSite: ${rootUrl} approved globally.`);
+      }
+
+      // Set the toolbar icon to "unsafe" immediately
+      updatePageAction("unsafe", tabId);
+      sendResponse({ status: "approved" });
+    });
+    return true;
+  }
+});
 
 initializeExtension();

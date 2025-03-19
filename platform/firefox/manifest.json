@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "FMHY SafeGuard",
     "author": "Kenneth Hendricks & contributors",
-    "version": "1.1.9",
+    "version": "1.2.0",
     "icons": {
         "128": "res/ext_icon_144.png"
     },
@@ -18,16 +18,68 @@
         "tabs",
         "alarms"
     ],
-    "background": {
-        "scripts": ["js/background.js"]
-    },
     "content_scripts": [
         {
-            "matches": ["<all_urls>"],
+            "matches": [
+                "*://*.google.com/*",
+                "*://*.google.co.uk/*",
+                "*://*.google.de/*",
+                "*://*.google.fr/*",
+                "*://*.google.it/*",
+                "*://*.google.es/*",
+                "*://*.google.nl/*",
+                "*://*.google.ca/*",
+                "*://*.google.com.au/*",
+                "*://*.google.com.br/*",
+                "*://*.google.co.jp/*",
+                "*://*.google.co.kr/*",
+                "*://*.google.co.in/*",
+                "*://*.google.ru/*",
+                "*://*.google.cn/*",
+                "*://*.bing.com/*",
+                "*://*.duckduckgo.com/*",
+                "*://*.librey.org/*",
+                "*://*.4get.ca/*",
+                "*://*.mojeek.com/*",
+                "*://*.qwant.com/*",
+                "*://*.swisscows.com/*",
+                "*://*.yacy.net/*",
+                "*://*.startpage.com/*",
+                "*://*.search.brave.com/*",
+                "*://*.ekoru.org/*",
+                "*://*.gibiru.com/*",
+                "*://*.searx.org/*",
+                "*://*.metager.org/*",
+                "*://*.ecosia.org/*",
+                "*://*.yandex.com/*",
+                "*://*.yandex.ru/*",
+                "*://*.yandex.ua/*",
+                "*://*.yandex.kz/*",
+                "*://*.yandex.by/*",
+                "*://*.yandex.tr/*",
+                "*://*.yahoo.com/*",
+                "*://*.yahoo.co.jp/*",
+                "*://*.yahoo.co.uk/*",
+                "*://*.yahoo.de/*",
+                "*://*.yahoo.fr/*",
+                "*://*.yahoo.it/*",
+                "*://*.yahoo.es/*",
+                "*://*.yahoo.ca/*",
+                "*://*.yahoo.com.au/*",
+                "*://*.yahoo.com.br/*",
+                "*://*.yahoo.co.kr/*",
+                "*://*.yahoo.co.in/*",
+                "*://*.baidu.com/*",
+                "*://*.naver.com/*",
+                "*://*.seznam.cz/*"
+            ],
             "js": ["js/content.js"],
             "run_at": "document_idle"
         }
     ],
+    "background": {
+        "scripts": ["js/background.js"]
+    },
     "browser_specific_settings": {
         "gecko": {
             "id": "{5d554479-7cc4-487f-bd25-d8fc67a42602}"

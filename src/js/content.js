@@ -359,14 +359,11 @@ browserAPI.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// Handle messages from background script
+// Listen for messages from background script
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "refreshSettings") {
-    refreshPage();
-    sendResponse({ status: "success" });
-    return true;
+  if (message.action === "processPage") {
+    processPage();
   }
-  return false;
 });
 
 // Function to refresh page highlighting
