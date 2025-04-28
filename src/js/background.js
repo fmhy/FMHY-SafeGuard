@@ -32,8 +32,6 @@ const safeListURLs = [
   "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/video-tools.md",
   "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/videopiracyguide.md",
 ];
-const starredListURL =
-  "https://raw.githubusercontent.com/fmhy/bookmarks/refs/heads/main/fmhy_in_bookmarks_starred_only.html";
 const fmhyFilterListURL =
   "https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/fmhy-filterlist.txt";
 
@@ -273,22 +271,45 @@ async function fetchSafeSites() {
 }
 
 async function fetchStarredSites() {
-  console.log("Fetching starred sites...");
+  console.log("Fetching starred sites from Markdown guides...");
+
   try {
-    const response = await fetch(starredListURL);
-    if (response.ok) {
-      const html = await response.text();
-      const urls = extractUrlsFromBookmarks(html);
-      starredSites = [...new Set([...urls.map(normalizeUrl), ...starredSites])];
+    // Fetch all the Markdown files in safeListURLs
+    const fetchPromises = safeListURLs.map((url) => fetch(url));
+    const responses = await Promise.all(fetchPromises);
 
-      // Store starred sites in storage for persistence
-      await browserAPI.storage.local.set({
-        starredSites: starredSites,
-        starredSiteCount: starredSites.length,
+    // From each markdown, pull out only those lines containing a star (⭐)
+    let starredUrls = [];
+    for (const response of responses) {
+      if (!response.ok) {
+        console.warn(`Failed to fetch ${response.url}`);
+        continue;
+      }
+      const markdown = await response.text();
+      markdown.split("\n").forEach((line) => {
+        if (line.includes("⭐")) {
+          // reuse your existing URL regex logic:
+          const match = line.match(/https?:\/\/[^\s)]+/);
+          if (match) starredUrls.push(match[0].trim());
+        }
       });
-
-      console.log(`Stored ${starredSites.length} starred sites`);
     }
+
+    // Normalize, dedupe and store
+    starredSites = Array.from(
+      new Set(
+        starredUrls
+          .map((url) => normalizeUrl(url))
+          .filter((url) => url !== null)
+      )
+    );
+
+    await browserAPI.storage.local.set({
+      starredSites,
+      starredSiteCount: starredSites.length,
+    });
+
+    console.log(`Stored ${starredSites.length} starred sites`);
   } catch (error) {
     console.error("Error fetching starred sites:", error);
   }
