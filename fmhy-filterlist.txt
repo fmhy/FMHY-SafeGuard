@@ -39,3 +39,4 @@ old.fmhy.net/search
 github.com/search?q=repo%3Afmhy%2FFMHY+&type=wikis
 github.com/fmhy/dupe-checker
 api.fmhy.net/single-page
+searx.fmhy.net
