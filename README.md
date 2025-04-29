@@ -52,6 +52,7 @@
 - **Real-time Site Status**: Instant feedback on whether a site is starred, safe, unsafe, or potentially unsafe, with visual toolbar icons.
 - **Updated Filterlists**: Utilizes the frequently updated FMHY filterlist to ensure protection from the latest unsafe domains.
 - **Pop-up Alerts**: Get easy-to-read pop-ups that inform you about the site status and allow further action.
+- **Search Engine-Focused Highlighting**: Seamlessly highlights links on search engines with colors and icons, instantly showing if a site is safe, unsafe, or potentially dangerous.
 
 # 📋 Usage Instructions
 
