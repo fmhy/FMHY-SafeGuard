@@ -794,49 +794,6 @@ async function initializeSettings() {
   console.log("Settings initialized:", mergedSettings);
 }
 
-// Add well-known safe sites manually as a fallback
-function addKnownSafeSites() {
-  // Known safe sites from FMHY that should be recognized
-  const knownSafeSites = [
-    // Common gaming sites
-    "https://fitgirl-repacks.site",
-    "https://pcgamestorrents.com",
-    "https://steamunlocked.net",
-    "https://gog-games.com",
-
-    // Common tools/software sites
-    // GitHub URLs should be evaluated per repository, not by domain
-    "https://gitlab.com",
-    "https://sourceforge.net",
-
-    // Media streaming/download sites
-    "https://archive.org",
-    "https://nyaa.si",
-    "https://rutracker.org",
-    "https://1337x.to",
-
-    // Known safe GitHub repositories
-    "https://github.com/hydralauncher/hydra",
-
-    // Add more known safe sites here as needed
-  ];
-
-  // Process and add to safeSites
-  const normalizedSites = knownSafeSites
-    .map((site) => normalizeUrl(site))
-    .filter((site) => site);
-
-  // Add to safeSites if not already present
-  for (const site of normalizedSites) {
-    if (!safeSites.includes(site)) {
-      console.log(`Adding known safe site: ${site}`);
-      safeSites.push(site);
-    }
-  }
-
-  console.log(`Added ${normalizedSites.length} known safe sites as fallback`);
-}
-
 // Extension initialization
 async function initializeExtension() {
   console.log("Initializing extension...");
