@@ -12,6 +12,26 @@ const processedDomains = new Set();
 const highlightCountTrusted = new Map();
 const highlightCountUntrusted = new Map();
 
+// Timers for periodic checking
+let reprocessTimer = null;
+let braveSearchInterval = null;
+let braveScrollTimer = null;
+let braveSearchBadgeInterval = null;
+
+// Helper function to find a parent element by tag name
+function findParentByTag(element, maxDepth, tagNames) {
+  let parent = element;
+  let depth = 0;
+  while (depth < maxDepth && parent.parentElement) {
+    parent = parent.parentElement;
+    depth++;
+    if (tagNames.includes(parent.tagName)) {
+      return parent;
+    }
+  }
+  return null;
+}
+
 // Default settings
 let settings = {
   highlightTrusted: true,
@@ -77,6 +97,10 @@ const warningStyle = `
   font-size: 12px;
   margin-left: 6px;
   z-index: 9999;
+  display: inline-block;
+  transform: rotate(0deg) !important;
+  transform-origin: center center;
+  vertical-align: middle;
 `;
 
 // Main initialization
@@ -223,26 +247,283 @@ function setupObserver() {
   if (!isSupportedSite(currentDomain)) {
     return;
   }
+  
+  // Special handling for Brave Search - continuously recheck and re-add badges/highlighting for all site types
+  if (currentDomain.includes("brave")) {
+    // Track domains we've processed to avoid repetitive work
+    const braveProcessedDomains = new Set();
+    
+    // Set up a more frequent interval specifically for Brave Search
+    braveSearchBadgeInterval = setInterval(() => {
+      // Process all links in Brave Search results
+      document.querySelectorAll('a[href]').forEach(link => {
+        try {
+          if (!link.href || link.href.startsWith('javascript:') || link.href.startsWith('#')) {
+            return;
+          }
+          
+          const linkDomain = normalizeDomain(new URL(link.href).hostname);
+          
+          // Skip internal Brave links
+          if (linkDomain.includes('brave.com')) {
+            return;
+          }
+          
+          // Always check all links, even if we've seen them before
+          // This ensures styling is reapplied if Brave removes it
+          
+          // CASE 1: Unsafe sites (user untrusted or in unsafe list)
+          if (userUntrusted.has(linkDomain) || 
+              (!userTrusted.has(linkDomain) && unsafeDomains.has(linkDomain))) {
+            
+            // Mark as unsafe
+            link.setAttribute('data-fmhy-unsafe', 'true');
+            
+            // Apply highlighting with !important to ensure it's not overridden
+            link.style.setProperty('text-shadow', `0 0 4px ${settings.untrustedColor}`, 'important');
+            link.style.setProperty('font-weight', 'bold', 'important');
+            
+            // Force style recalculation by toggling a property
+            link.style.display = 'inline';
+            link.style.display = '';
+            
+            // Also apply a class for redundancy
+            link.classList.add('fmhy-highlighted-unsafe');
+            
+            // Add badge for unsafe sites
+            const resultContainer = link.closest('article') || 
+                                  link.closest('li') || 
+                                  link.closest('.snippet') || 
+                                  findParentByTag(link, 5, ['ARTICLE', 'LI', 'DIV']);
+            
+            if (resultContainer) {
+              const siteDiv = resultContainer.querySelector('div[class^="site svelte-"]');
+              
+              if (siteDiv && !siteDiv.querySelector('.fmhy-unsafe-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'fmhy-unsafe-badge';
+                badge.textContent = '⚠️ FMHY Unsafe Site';
+                badge.dataset.domain = linkDomain;
+                siteDiv.appendChild(badge);
+              }
+            }
+          }
+          // CASE 2: Safe sites (user trusted or in safe list)
+          else if (userTrusted.has(linkDomain) || safeDomains.has(linkDomain)) {
+            // Mark as safe
+            link.setAttribute('data-fmhy-safe', 'true');
+            
+            // Only add highlighting if the setting is enabled
+            if (settings.highlightTrusted) {
+              link.style.setProperty('text-shadow', `0 0 4px ${settings.trustedColor}`, 'important');
+              link.style.setProperty('font-weight', 'bold', 'important');
+            }
+          }
+        } catch (e) {}
+      });
+    }, 50); // Check more frequently to ensure styling persists
+  }
 
   const observer = new MutationObserver((mutations) => {
-    for (const { addedNodes } of mutations) {
-      for (const node of addedNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          // If it's a link itself
-          if (node.tagName === "A" && node.href) {
-            processLink(node, currentDomain);
+    let needsReprocess = false;
+    
+    for (const mutation of mutations) {
+      // Check if existing badges were removed
+      if (mutation.removedNodes && mutation.removedNodes.length) {
+        for (const node of mutation.removedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.classList && 
+                (node.classList.contains('fmhy-badge-wrapper') || 
+                 node.textContent && node.textContent.includes('FMHY Unsafe Site'))) {
+              needsReprocess = true;
+              break;
+            }
           }
-
-          // Process any links inside the added node
-          node
-            .querySelectorAll("a[href]")
-            .forEach((link) => processLink(link, currentDomain));
+        }
+      }
+      
+      // Process added nodes
+      if (mutation.addedNodes && mutation.addedNodes.length) {
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // If it's a link itself
+            if (node.tagName === "A" && node.href) {
+              processLink(node, currentDomain);
+            }
+            
+            // Process any links inside the added node
+            if (node.querySelectorAll) {
+              node
+                .querySelectorAll("a[href]")
+                .forEach((link) => processLink(link, currentDomain));
+            }
+          }
         }
       }
     }
+    
+    // If badges were removed, reprocess the page
+    if (needsReprocess) {
+      // Use setTimeout to avoid too frequent reprocessing
+      clearTimeout(reprocessTimer);
+      reprocessTimer = setTimeout(() => {
+        // Instead of full reprocessing, just scan for unprocessed links
+        document
+          .querySelectorAll("a[href]:not(.fmhy-processed)")
+          .forEach((link) => processLink(link, currentDomain));
+      }, 100);
+    }
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  // Watch for both childList and attributes changes, and subtree modifications
+  observer.observe(document.body, { 
+    childList: true, 
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['href']
+  });
+  
+  // Special handling for Brave Search which actively removes our badges
+  if (currentDomain.includes("brave")) {
+    // Set up a more aggressive approach for Brave Search
+    braveSearchInterval = setInterval(() => {
+      // Create a global container for badges if it doesn't exist yet
+      if (!document.getElementById('fmhy-brave-badge-container')) {
+        const container = document.createElement('div');
+        container.id = 'fmhy-brave-badge-container';
+        container.style.cssText = 'position: absolute; z-index: 99999; pointer-events: none;';
+        document.body.appendChild(container);
+        
+        // Use Shadow DOM to protect our content from being removed
+        const shadowRoot = container.attachShadow({mode: 'closed'});
+        
+        // Add styles to the Shadow DOM
+        const style = document.createElement('style');
+        style.textContent = `
+          .brave-badge {
+            background-color: #ff0000;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            white-space: nowrap;
+            position: absolute;
+            transform: rotate(180deg) scaleX(-1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          }
+        `;
+        shadowRoot.appendChild(style);
+        
+        // Create a container for badges
+        const badgesContainer = document.createElement('div');
+        shadowRoot.appendChild(badgesContainer);
+        
+        // Store the badges container reference
+        window._fmhyBraveBadgesContainer = badgesContainer;
+      }
+      
+      // Process all links and update badges
+      document.querySelectorAll('a[href]').forEach(link => {
+        try {
+          // Skip if no valid URL
+          if (!link.href || link.href.startsWith('javascript:') || link.href.startsWith('#')) {
+            return;
+          }
+          
+          const linkDomain = normalizeDomain(new URL(link.href).hostname);
+          
+          // Check if it's an unsafe domain
+          if (userUntrusted.has(linkDomain) || 
+              (!userTrusted.has(linkDomain) && unsafeDomains.has(linkDomain))) {
+            
+            // Get link position
+            const rect = link.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            // Create or update badge ID based on domain
+            const badgeId = `brave-badge-${linkDomain.replace(/[^a-z0-9]/g, '')}`;
+            
+            // Find existing badge or create new one
+            let badge = window._fmhyBraveBadgesContainer.querySelector(`#${badgeId}`);
+            
+            if (!badge) {
+              badge = document.createElement('div');
+              badge.id = badgeId;
+              badge.className = 'brave-badge';
+              badge.textContent = '⚠️ FMHY Unsafe Site';
+              window._fmhyBraveBadgesContainer.appendChild(badge);
+            }
+            
+            // Position badge next to link
+            badge.style.top = `${rect.bottom + scrollTop}px`;
+            badge.style.left = `${rect.left + scrollLeft}px`;
+            badge.style.display = 'block';
+            
+            // Mark as processed
+            link.classList.add('fmhy-processed');
+            processedLinks.add(link);
+          }
+        } catch (e) {
+          console.error('[FMHY SafeGuard] Error in Brave Search processing:', e);
+        }
+      });
+      
+      // Remove badges for elements that no longer exist
+      if (window._fmhyBraveBadgesContainer) {
+        const badges = window._fmhyBraveBadgesContainer.querySelectorAll('.brave-badge');
+        badges.forEach(badge => {
+          const badgeId = badge.id;
+          const domainPart = badgeId.replace('brave-badge-', '');
+          
+          // Check if any link to this domain exists on the page
+          let found = false;
+          document.querySelectorAll('a[href]').forEach(link => {
+            try {
+              if (!link.href || link.href.startsWith('javascript:')) return;
+              const linkDomain = normalizeDomain(new URL(link.href).hostname);
+              const sanitizedDomain = linkDomain.replace(/[^a-z0-9]/g, '');
+              if (sanitizedDomain === domainPart) {
+                found = true;
+              }
+            } catch (e) {}
+          });
+          
+          if (!found) {
+            badge.style.display = 'none';
+          }
+        });
+      }
+    }, 200); // Check more frequently (200ms)
+    
+    // Also handle scroll events to reposition badges
+    window.addEventListener('scroll', () => {
+      if (braveScrollTimer) clearTimeout(braveScrollTimer);
+      braveScrollTimer = setTimeout(() => {
+        // Trigger the interval function to reposition badges
+        if (window._fmhyBraveBadgesContainer) {
+          document.querySelectorAll('a[href].fmhy-processed').forEach(link => {
+            try {
+              const linkDomain = normalizeDomain(new URL(link.href).hostname);
+              const badgeId = `brave-badge-${linkDomain.replace(/[^a-z0-9]/g, '')}`;
+              const badge = window._fmhyBraveBadgesContainer.querySelector(`#${badgeId}`);
+              
+              if (badge) {
+                const rect = link.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                
+                badge.style.top = `${rect.bottom + scrollTop}px`;
+                badge.style.left = `${rect.left + scrollLeft}px`;
+              }
+            } catch (e) {}
+          });
+        }
+      }, 100);
+    });
+  }
 }
 
 // Process a single link
@@ -250,6 +531,9 @@ function processLink(link, currentDomain) {
   // Skip if already processed
   if (processedLinks.has(link)) return;
   processedLinks.add(link);
+  
+  // Add a class to mark as processed for easier detection
+  link.classList.add("fmhy-processed");
 
   try {
     // Skip links without proper URLs
@@ -314,10 +598,137 @@ function highlightLink(link, type) {
 
 // Add a warning banner after an unsafe link
 function addWarningBanner(link) {
-  const warning = document.createElement("span");
-  warning.textContent = "⚠️ FMHY Unsafe Site";
-  warning.style = warningStyle;
-  link.after(warning);
+  const currentDomain = normalizeDomain(window.location.hostname);
+  
+  // Special handling for Brave Search - use original highlighting style
+  if (currentDomain.includes("brave")) {
+    try {
+      // Mark the link with attribute for CSS styling
+      link.setAttribute('data-fmhy-unsafe', 'true');
+      
+      // Use the original highlighting approach with text shadow
+      link.style.setProperty('text-shadow', `0 0 4px ${settings.untrustedColor}`, 'important');
+      link.style.setProperty('font-weight', 'bold', 'important');
+      
+      // Add CSS for the badge styling only
+      if (!document.getElementById('fmhy-brave-style')) {
+        const style = document.createElement('style');
+        style.id = 'fmhy-brave-style';
+        style.textContent = `
+          a[data-fmhy-unsafe="true"] {
+            text-shadow: 0 0 4px ${settings.untrustedColor} !important;
+            font-weight: bold !important;
+          }
+          
+          .fmhy-unsafe-badge {
+            display: inline-block !important;
+            color: #ffffff !important;
+            background-color: #ff0000 !important;
+            border-radius: 4px !important;
+            padding: 2px 5px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            white-space: nowrap !important;
+            min-width: 95px !important;
+            width: fit-content !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Find the closest search result container
+      let resultContainer = link.closest('article') || link.closest('li') || link.closest('.snippet');
+      
+      if (!resultContainer) {
+        // If no direct container, traverse up a few levels
+        resultContainer = link;
+        let depth = 0;
+        while (depth < 5 && resultContainer.parentElement) {
+          resultContainer = resultContainer.parentElement;
+          depth++;
+          if (resultContainer.tagName === 'ARTICLE' || resultContainer.tagName === 'LI') {
+            break;
+          }
+        }
+      }
+      
+      // Look for the site div specifically (what the user requested)
+      const siteDiv = resultContainer.querySelector('div[class^="site svelte-"]');
+      
+      if (siteDiv) {
+        // Check if we already added a badge to this site div
+        if (!siteDiv.querySelector('.fmhy-unsafe-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'fmhy-unsafe-badge';
+          badge.textContent = '⚠️ FMHY Unsafe Site';
+          siteDiv.appendChild(badge);
+        }
+      }
+      
+      return; // Exit early
+    } catch (e) {
+      console.error("[FMHY SafeGuard] Error styling Brave Search link:", e);
+    }
+  }
+  
+  // For all other search engines, create a badge element
+  const badge = document.createElement("span");
+  Object.assign(badge.style, {
+    backgroundColor: "#ff0000",
+    color: "#fff",
+    padding: "2px 6px",
+    fontWeight: "bold",
+    borderRadius: "4px",
+    fontSize: "12px",
+    display: "inline-block",
+    transform: "rotate(180deg) scaleX(-1) !important", 
+    WebkitTransform: "rotate(180deg) scaleX(-1) !important",
+    msTransform: "rotate(180deg) scaleX(-1) !important",
+    position: "relative",
+    zIndex: "9999"
+  });
+  
+  // Add the warning icon and text
+  badge.innerHTML = '<span style="display: inline-block; font-size: 14px;">⚠️</span> FMHY Unsafe Site';
+  
+  // Google-specific margin adjustment
+  if (currentDomain.includes("google")) {
+    badge.style.margin = "0 15px";
+  }
+  
+  // Different insertion strategy for Google vs other engines
+  if (currentDomain.includes("google")) {
+    // For Google, find a suitable container
+    let container = link;
+    let parent = link.parentElement;
+    
+    // Look for a suitable container
+    for (let i = 0; i < 3 && parent; i++) {
+      if (parent.tagName === "DIV" || parent.tagName === "LI" || 
+          parent.querySelector("cite") || parent.querySelector(".link")) {
+        container = parent;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+    
+    // Try to place after cite element if it exists
+    const citeElement = container.querySelector("cite");
+    if (citeElement) {
+      citeElement.after(badge);
+    } else {
+      // Insert after the title
+      const resultTitle = container.querySelector("h3") || container.querySelector("a[href]") || link;
+      if (resultTitle.nextSibling) {
+        container.insertBefore(badge, resultTitle.nextSibling);
+      } else {
+        container.appendChild(badge);
+      }
+    }
+  } else {
+    // For other search engines, use the simple approach
+    link.after(badge);
+  }
 }
 
 // Helper functions
@@ -373,13 +784,31 @@ function refreshPage() {
     .then(() => loadDomainLists())
     .then(() => {
       // Clear processed state and reprocess
-      processedLinks.clear();
+      // Note: WeakSet doesn't support clear(), create a new instance instead
+      processedLinks = new WeakSet();
       processedDomains.clear();
       highlightCountTrusted.clear();
       highlightCountUntrusted.clear();
+      
+      // Clear any existing Brave Search interval and restart the observer
+      if (braveSearchBadgeInterval) {
+        clearInterval(braveSearchBadgeInterval);
+        braveSearchBadgeInterval = null;
+      }
+      
+      // Restart the processing
       processPage();
+      setupObserver();
     });
 }
+
+// Clean up timers when the page is unloaded
+window.addEventListener('unload', () => {
+  if (braveSearchBadgeInterval) clearInterval(braveSearchBadgeInterval);
+  if (braveSearchInterval) clearInterval(braveSearchInterval);
+  if (braveScrollTimer) clearTimeout(braveScrollTimer);
+  if (reprocessTimer) clearTimeout(reprocessTimer);
+});
 
 // Start the script
 init();
