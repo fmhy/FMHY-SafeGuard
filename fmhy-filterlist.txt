@@ -7,6 +7,8 @@ fmhy.lol
 guides.fmhy.lol
 fmhy.pages.dev
 fmhy.xyz
+fmhy.vercel.app
+ez.lol/ls
 
 ! Rentry Backups
 https://rentry.co/FMHY
