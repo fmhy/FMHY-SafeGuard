@@ -858,9 +858,6 @@ async function initializeExtension() {
       }
     }
 
-    // Add fallback known sites - only for safe sites, not for starred
-    addKnownSafeSites();
-
     // Set up the update schedule
     await setupUpdateSchedule();
 
