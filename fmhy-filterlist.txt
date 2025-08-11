@@ -8,12 +8,16 @@ guides.fmhy.lol
 fmhy.pages.dev
 fmhy.xyz
 fmhy.vercel.app
-ez.lol/ls
 
 ! Rentry Backups
 https://rentry.co/FMHY
+https://rentry.org/FMHY
 https://rentry.co/FMHYbackups
+https://rentry.org/FMHYbackups
 https://rentry.org/piracy
+https://rentry.co/piracy
+https://rentry.co/The-Piracy-Glossary
+https://rentry.org/The-Piracy-Glossary
 
 ! GitHub Projects
 github.com/fmhy
