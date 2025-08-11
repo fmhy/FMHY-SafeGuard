@@ -50,7 +50,6 @@ let userUntrusted = new Set();
 // Search engines where highlighting should be applied
 const searchEngines = [
   "google.com",
-  "google.", // Covers all Google country domains like google.co.uk, google.fr, etc.
   "bing.com",
   "duckduckgo.com",
   "librey.org",

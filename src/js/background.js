@@ -46,7 +46,6 @@ const approvedUrls = new Map(); // Map to store approved URLs per tab
 // List of search engines to check against
 const searchEngines = [
   "google.com",
-  "google.", // Covers all Google country domains like google.co.uk, google.fr, etc.
   "bing.com",
   "duckduckgo.com",
   "librey.org",
