@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     switch (status) {
       case "unsafe":
-        message = `${displayUrl} is flagged as <strong>unsafe</strong>. Be cautious when interacting with this site.`;
+        message = `${displayUrl} is flagged as <strong>unsafe</strong>. Its Recommended To Avoid this Site.`;
         break;
       case "potentially_unsafe":
         message = `${displayUrl} is <strong>potentially unsafe</strong>. Proceed with caution.`;
