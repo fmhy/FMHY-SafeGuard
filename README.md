@@ -2,7 +2,7 @@
   <a href="https://github.com/fmhy/FMHY-SafeGuard/releases"><img src="https://github.com/fmhy/FMHY-SafeGuard/blob/main/assets/banner.png" /></a>
 </p>
 <div align="center">
-  <a href="https://rentry.co/fmhy-invite">
+  <a href="https://github.com/fmhy/FMHY/wiki/FMHY-Discord">
     <img src="https://img.shields.io/static/v1?label=Join&message=FMHY&color=c4b5fd" alt="Invite Link"></a>
   <a href="https://github.com/fmhy/FMHY-SafeGuard/commits/main/">
     <img src="https://img.shields.io/github/last-commit/fmhy/FMHY-SafeGuard?label=Last%20Commit&color=green" alt="Last Commit"></a>
