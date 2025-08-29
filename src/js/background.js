@@ -30,7 +30,7 @@ const safeListURLs = [
   "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/text-tools.md",
   "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/torrentpiracyguide.md",
   "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/video-tools.md",
-  "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/videopiracyguide.md",
+  "https://raw.githubusercontent.com/fmhy/edit/refs/heads/main/docs/video",
 ];
 const fmhyFilterListURL =
   "https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/fmhy-filterlist.txt";
