@@ -538,9 +538,6 @@ function addWarningBanner(link) {
     borderRadius: "4px",
     fontSize: "12px",
     display: "inline-block",
-    transform: "rotate(180deg) scaleX(-1) !important", 
-    WebkitTransform: "rotate(180deg) scaleX(-1) !important",
-    msTransform: "rotate(180deg) scaleX(-1) !important",
     position: "relative",
     zIndex: "9999"
   });
