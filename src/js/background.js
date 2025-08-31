@@ -486,6 +486,14 @@ async function setupUpdateSchedule() {
 
 // Event Listeners
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "forceUpdateFilterlist") {
+    fetchFilterLists().then(() => {
+      if (sendResponse) sendResponse({ status: "ok" });
+    }).catch((err) => {
+      if (sendResponse) sendResponse({ status: "error", error: err?.toString() });
+    });
+    return true; // Indicates async response
+  }
   if (message.action === "checkSiteStatus") {
     const { url, rootUrl } = message;
 
