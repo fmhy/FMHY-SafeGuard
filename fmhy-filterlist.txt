@@ -30,13 +30,11 @@ chromewebstore.google.com/detail/fmhy-safeguard/ihcppnlmkfeclmehgdhjkglkbmiemnmp
 ! Social Media
 reddit.com/r/FREEMEDIAHECKYEAH
 bsky.app/profile/fmhy.net
-rentry.co/fmhy-invite
+github.com/fmhy/FMHY/wiki/FMHY-Discord
 redlib.fmhy.net/r/FREEMEDIAHECKYEAH/wiki/index
 
 ! Search Tools
 fmhy-search.streamlit.app
-old.fmhy.net/search
 github.com/search?q=repo%3Afmhy%2FFMHY+&type=wikis
-github.com/fmhy/dupe-checker
 api.fmhy.net/single-page
 searx.fmhy.net
