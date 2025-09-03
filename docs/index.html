@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FMHY SafeGuard</title>
+    <link rel="icon" type="image/x-icon" href="../src/res/ext_icon_144.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Floating Navigation -->
+    <nav class="navbar">
+      <div class="nav-content">
+        <a href="#" class="nav-logo">
+          <img src="../src/res/ext_icon_144.png" alt="FMHY SafeGuard" />
+          <span>FMHY SafeGuard</span>
+        </a>
+        <div class="nav-center">
+          <ul class="nav-links">
+            <li><a href="#features" class="active">Features</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#usage">Usage</a></li>
+            <li><a href="#support">Support</a></li>
+          </ul>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- Hero Section -->
+      <section class="hero">
+        <h1>FMHY SafeGuard</h1>
+        <p>Protect your browsing with real-time website safety checks powered by the FMHY Filterlist. Stay safe while exploring the web with instant visual feedback.</p>
+        <div class="hero-buttons">
+          <a href="#installation" class="btn btn-primary">Get Started</a>
+          <a href="https://github.com/fmhy/FMHY-SafeGuard" class="btn btn-secondary" target="_blank">View on GitHub</a>
+        </div>
+      </section>
+
+      <!-- Status Icons Section -->
+      <section class="section">
+        <div class="section-card">
+          <h2>Website Safety Status</h2>
+          <p>FMHY SafeGuard categorizes websites into different safety levels with clear visual indicators:</p>
+          <div class="status-icons">
+            <div class="status-icon">
+              <img src="../assets/icons/starred.png" alt="Starred" />
+              <span>Starred</span>
+            </div>
+            <div class="status-icon">
+              <img src="../assets/icons/safe.png" alt="Safe" />
+              <span>Safe</span>
+            </div>
+            <div class="status-icon">
+              <img src="../assets/icons/default.png" alt="Unknown" />
+              <span>Unknown</span>
+            </div>
+            <div class="status-icon">
+              <img src="../assets/icons/potentially_unsafe.png" alt="Potentially Unsafe" />
+              <span>Potentially Unsafe</span>
+            </div>
+            <div class="status-icon">
+              <img src="../assets/icons/unsafe.png" alt="Unsafe" />
+              <span>Unsafe</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="features" class="section">
+        <div class="section-card">
+          <h2>Key Features</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">🛡️</div>
+              <h3>Real-time Protection</h3>
+              <p>Instant feedback on website safety with visual toolbar icons that update automatically as you browse.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🔄</div>
+              <h3>Updated Filterlists</h3>
+              <p>Utilizes frequently updated FMHY filterlist to ensure protection from the latest unsafe domains.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🎨</div>
+              <h3>Link Highlighting</h3>
+              <p>Seamlessly highlights links on search engines with colors and icons showing safety status.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">⚡</div>
+              <h3>Pop-up Alerts</h3>
+              <p>Easy-to-read pop-ups that inform you about site status and allow further action.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🌙</div>
+              <h3>Theme Support</h3>
+              <p>Beautiful dark and light themes with system preference detection for comfortable browsing.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">⚙️</div>
+              <h3>Customizable Settings</h3>
+              <p>Adjust warning preferences, update frequency, and customize link highlighting colors.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Installation Section -->
+      <section id="installation" class="section">
+        <div class="section-card">
+          <h2>Installation</h2>
+          <p>Get FMHY SafeGuard for your browser in just a few clicks:</p>
+          <div class="download-buttons">
+            <a href="https://addons.mozilla.org/en-US/firefox/addon/fmhy-safeguard/" class="download-btn" target="_blank">
+              <img src="../assets/firefox_addon_image.png" alt="Get FMHY SafeGuard for Firefox" />
+            </a>
+            <a href="https://chromewebstore.google.com/detail/fmhy-safeguard/ihcppnlmkfeclmehgdhjkglkbmiemnmp" class="download-btn" target="_blank">
+              <img src="../assets/chrome_addon_image.png" alt="Get FMHY SafeGuard for Chrome" />
+            </a>
+          </div>
+          <p>Or download the latest release from our <a href="https://github.com/fmhy/FMHY-SafeGuard/releases" target="_blank">GitHub Releases page</a>.</p>
+        </div>
+      </section>
+
+      <!-- Usage Section -->
+      <section id="usage" class="section">
+        <div class="section-card">
+          <h2>How to Use</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">1️⃣</div>
+              <h3>Install Extension</h3>
+              <p>Download and install FMHY SafeGuard from your browser's extension store or GitHub releases.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">2️⃣</div>
+              <h3>Browse Securely</h3>
+              <p>Visit any website and the toolbar icon will automatically update to reflect the site's safety status.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">3️⃣</div>
+              <h3>View Details</h3>
+              <p>Click the extension icon to open a popup with detailed site status information and options.</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">⚙️</div>
+              <h3>Customize Settings</h3>
+              <p>Access settings to customize themes, update frequency, and link highlighting preferences.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Support Section -->
+      <section id="support" class="section">
+        <div class="section-card">
+          <h2>Support & Contributions</h2>
+          <p>Need help or want to contribute? We'd love to hear from you!</p>
+          <div class="hero-buttons">
+            <a href="https://github.com/fmhy/FMHY-SafeGuard/issues" class="btn btn-primary" target="_blank">Report Issues</a>
+            <a href="https://github.com/fmhy/FMHY-SafeGuard/pulls" class="btn btn-secondary" target="_blank">Contribute</a>
+            <a href="https://github.com/fmhy/FMHY/wiki/FMHY-Discord" class="btn btn-secondary" target="_blank">Join Discord</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>FMHY SafeGuard - Powered by <a href="https://github.com/fmhy/FMHYFilterlist" target="_blank">FMHY Filterlist</a></p>
+      <p>Created by <a href="https://fmhy.net" target="_blank">FMHY</a> • <a href="https://github.com/fmhy/FMHY-SafeGuard" target="_blank">Open Source</a></p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
