@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
+  if (forceRefreshButton) {
+    forceRefreshButton.addEventListener("click", async () => {
+      forceRefreshButton.disabled = true;
+      forceRefreshButton.textContent = "Updating...";
+      try {
+        await browserAPI.runtime.sendMessage({ action: "forceUpdateFilterlist" });
+        showNotification("Filterlist update started.");
+      } catch (error) {
+        showNotification("Failed to start update.", true);
+      } finally {
+        setTimeout(() => {
+          forceRefreshButton.disabled = false;
+          forceRefreshButton.textContent = "Force Update Filterlist";
+        }, 2000);
+      }
+    });
+  }
   // Cross-browser compatibility shim
   const browserAPI = typeof browser !== "undefined" ? browser : chrome;
   // Load and display the extension version from manifest.json
