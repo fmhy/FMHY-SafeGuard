@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "FMHY SafeGuard",
     "author": "Kenneth Hendricks & contributors",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "icons": {
         "128": "res/ext_icon_144.png"
     },
