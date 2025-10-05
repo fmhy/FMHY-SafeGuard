@@ -16,8 +16,8 @@
         --background: rgb(26, 26, 26);
         --text-primary: #e8e8e8;
         --text-secondary: #848a94;
-        --accent-purple: #c4b5fd;
-        --accent-blue: #7bc5e4;
+        --accent-purple: #6a0dad; /* Halloween purple */
+        --accent-blue: #ff7518; /* Halloween orange */
         --danger: #ff4444;
         --card-bg: rgba(255, 255, 255, 0.05);
       }
@@ -60,6 +60,7 @@
         font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
+        /* Halloween gradient: Purple to Orange */
         background: linear-gradient(
           120deg,
           var(--accent-purple) 30%,
@@ -138,7 +139,7 @@
       }
 
       .footer a {
-        color: var(--accent-blue);
+        color: var(--accent-blue); /* Halloween orange */
         text-decoration: none;
       }
 
@@ -167,9 +168,137 @@
           width: 100%;
         }
       }
+
+      /* Floating Halloween Icons */
+      .floating-icon {
+        position: fixed;
+        width: 40px;
+        height: 40px;
+        opacity: 0.08; /* Even more subtle for full-page */
+        pointer-events: none;
+        filter: grayscale(100%) brightness(0.6);
+        animation: float 10s ease-in-out infinite, rotate 6s linear infinite;
+        z-index: 1;
+      }
+
+      /* Halloween icon positions for full page */
+      .icon1 {
+        top: 5%;
+        left: 10%;
+        animation-delay: 0s;
+        transform: rotate(15deg);
+      }
+      .icon2 {
+        top: 15%;
+        right: 15%;
+        animation-delay: 1.5s;
+        transform: rotate(-20deg);
+      }
+      .icon3 {
+        top: 40%;
+        left: 5%;
+        animation-delay: 3s;
+        transform: rotate(30deg);
+      }
+      .icon4 {
+        top: 60%;
+        right: 10%;
+        animation-delay: 4.5s;
+        transform: rotate(-10deg);
+      }
+      .icon5 {
+        bottom: 20%;
+        left: 20%;
+        animation-delay: 6s;
+        transform: rotate(25deg);
+      }
+      .icon6 {
+        bottom: 10%;
+        right: 25%;
+        animation-delay: 7.5s;
+        transform: rotate(-15deg);
+      }
+      .icon7 {
+        top: 25%;
+        left: 50%;
+        animation-delay: 9s;
+        transform: rotate(5deg);
+      }
+      .icon8 {
+        bottom: 40%;
+        right: 50%;
+        animation-delay: 2s;
+        transform: rotate(-25deg);
+      }
+
+      /* Halloween floating animations */
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) translateX(0);
+        }
+        33% {
+          transform: translateY(-15px) translateX(10px);
+        }
+        66% {
+          transform: translateY(5px) translateX(-8px);
+        }
+      }
+
+      @keyframes rotate {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
+    <!-- Halloween Update! -->
+    <!-- Floating Halloween Icons -->
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Ghost/3D/ghost_3d.png"
+      alt="Ghost Icon"
+      class="floating-icon icon1"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Jack-o-lantern/3D/jack-o-lantern_3d.png"
+      alt="Pumpkin Icon"
+      class="floating-icon icon2"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Skull/3D/skull_3d.png"
+      alt="Skull Icon"
+      class="floating-icon icon3"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Person%20zombie/3D/person_zombie_3d.png"
+      alt="Zombie Icon"
+      class="floating-icon icon4"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Ghost/3D/ghost_3d.png"
+      alt="Ghost Icon"
+      class="floating-icon icon5"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Jack-o-lantern/3D/jack-o-lantern_3d.png"
+      alt="Pumpkin Icon"
+      class="floating-icon icon6"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Skull/3D/skull_3d.png"
+      alt="Skull Icon"
+      class="floating-icon icon7"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Person%20zombie/3D/person_zombie_3d.png"
+      alt="Zombie Icon"
+      class="floating-icon icon8"
+    />
+
     <div class="container">
       <h1 class="title">FMHY SafeGuard</h1>
       <div class="warning-card">

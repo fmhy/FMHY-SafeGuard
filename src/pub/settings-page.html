@@ -16,8 +16,8 @@
         --card-bg: rgba(255, 255, 255, 0.05);
         --text-primary: #e8e8e8;
         --text-secondary: #848a94;
-        --accent-purple: #c4b5fd;
-        --accent-blue: #7bc5e4;
+        --accent-purple: #6a0dad; /* Halloween purple */
+        --accent-blue: #ff7518; /* Halloween orange */
         --toggle-bg: #374151;
         --section-border: rgba(255, 255, 255, 0.1);
       }
@@ -55,6 +55,7 @@
         font-size: 1.75rem;
         font-weight: 700;
         margin-bottom: 1.5rem;
+        /* Halloween gradient: Purple to Orange */
         background: linear-gradient(
           120deg,
           var(--accent-purple) 30%,
@@ -266,6 +267,67 @@
 
         .stat-value {
           font-size: 1.75rem;
+        }
+      }
+
+      /* Subtle Halloween Icons for Settings Page */
+      .floating-icon {
+        position: fixed;
+        width: 35px;
+        height: 35px;
+        opacity: 0.06; /* Very subtle for settings page */
+        pointer-events: none;
+        filter: grayscale(100%) brightness(0.5);
+        animation: float 12s ease-in-out infinite, rotate 8s linear infinite;
+        z-index: 1;
+      }
+
+      /* Minimal icon positions - only 4 icons for settings */
+      .settings-icon1 {
+        top: 8%;
+        left: 8%;
+        animation-delay: 0s;
+        transform: rotate(20deg);
+      }
+      .settings-icon2 {
+        top: 12%;
+        right: 12%;
+        animation-delay: 3s;
+        transform: rotate(-25deg);
+      }
+      .settings-icon3 {
+        bottom: 15%;
+        left: 15%;
+        animation-delay: 6s;
+        transform: rotate(15deg);
+      }
+      .settings-icon4 {
+        bottom: 20%;
+        right: 20%;
+        animation-delay: 9s;
+        transform: rotate(-18deg);
+      }
+
+      /* Gentle floating animations for settings */
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) translateX(0);
+        }
+        33% {
+          transform: translateY(-12px) translateX(8px);
+        }
+        66% {
+          transform: translateY(6px) translateX(-6px);
+        }
+      }
+
+      @keyframes rotate {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
         }
       }
 
@@ -491,6 +553,29 @@
     </style>
   </head>
   <body>
+    <!-- Halloween Update - Subtle Settings Theme! -->
+    <!-- Minimal Floating Halloween Icons -->
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Ghost/3D/ghost_3d.png"
+      alt="Ghost Icon"
+      class="floating-icon settings-icon1"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Jack-o-lantern/3D/jack-o-lantern_3d.png"
+      alt="Pumpkin Icon"
+      class="floating-icon settings-icon2"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Skull/3D/skull_3d.png"
+      alt="Skull Icon"
+      class="floating-icon settings-icon3"
+    />
+    <img
+      src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Person%20zombie/3D/person_zombie_3d.png"
+      alt="Zombie Icon"
+      class="floating-icon settings-icon4"
+    />
+
     <div class="container">
       <h1 class="title">FMHY SafeGuard Settings</h1>
 
