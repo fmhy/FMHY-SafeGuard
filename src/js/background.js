@@ -532,7 +532,7 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       // Special handling for repository sites
-      const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net"].some(
+      const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net", "codeberg.org"].some(
         (domain) =>
           urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
       );
@@ -641,7 +641,7 @@ function getStatusFromLists(url) {
     // Special handling for repository hosting sites
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
-    const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net"].some(
+    const isRepoSite = ["github.com", "gitlab.com", "sourceforge.net", "codeberg.org"].some(
       (domain) =>
         urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)
     );
