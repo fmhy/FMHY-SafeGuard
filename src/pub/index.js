@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         message = `${displayUrl} is <strong>potentially unsafe</strong>. Proceed with caution.`;
         break;
       case "fmhy":
-        message = `${displayUrl} is an <strong>FMHY</strong> related site. Proceed confidently.`;
+        message = `${displayUrl} is a <strong>FMHY</strong> related site. Proceed confidently.`;
         break;
       case "safe":
         message = `${displayUrl} is <strong>safe</strong> to browse.`;
