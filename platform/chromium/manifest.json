@@ -3,7 +3,7 @@
     "name": "__MSG_extensionName__",
     "default_locale": "en",
     "author": "Kenneth Hendricks & contributors",
-    "version": "1.3.5",
+    "version": "1.3.6",
     "icons": {
         "128": "res/ext_icon_144.png"
     },
@@ -17,7 +17,8 @@
     "permissions": [
         "storage",
         "tabs",
-        "alarms"
+        "alarms",
+        "contextMenus"
     ],
     "content_scripts": [
         {

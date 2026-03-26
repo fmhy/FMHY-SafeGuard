@@ -11,6 +11,20 @@ fmhy.xyz
 fmhy.vercel.app
 fmhy.github.io
 fmhy.samidy.com
+fmhyclone.pages.dev
+retrofmhy.pages.dev
+fmhy.bid
+fmhy.jbugel.xyz
+a-fmhy.pages.dev
+fmhy.artistgrid.cx
+fmhy.artistgrid.pp.ua
+fmhy.blooketbot.me
+fmhy.joyconlab.net
+fmhy.monochrome.tf
+fmhy.piperagossip.org
+fmhy.pp.ua
+fmhy.prigoana.com
+fmhy.prigoana.pp.ua
 
 ! Grading / Tools
 fmhy-grading.pages.dev
@@ -38,6 +52,7 @@ github.com/fmhy/FMHYFilterlist
 github.com/fmhy/FMHY-SafeGuard
 github.com/fmhy/snowbin
 github.com/taskyland/snowbin
+github.com/LandWarderer2772/A-FMHY
 
 ! Extensions 
 addons.mozilla.org/en-US/firefox/addon/fmhy-safeguard

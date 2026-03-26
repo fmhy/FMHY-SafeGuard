@@ -336,6 +336,17 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.section p a {
+  color: var(--link-color);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 0.08em;
+  transition: opacity 0.2s ease;
+}
+
+.section p a:hover {
+  opacity: 0.85;
+}
+
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

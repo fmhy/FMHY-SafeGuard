@@ -53,6 +53,7 @@ const searchEngines = [
   "google.com",
   "bing.com",
   "duckduckgo.com",
+  "kagi.com",
   "librey.org",
   "4get.ca",
   "mojeek.com",

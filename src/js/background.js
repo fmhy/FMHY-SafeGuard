@@ -1,13 +1,47 @@
 // Cross-browser compatibility shim
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+const contextMenuIdOpenFmhy = "open-fmhy-net";
+const fmhyWebsiteURL = "https://fmhy.net/";
 
 // Open welcome page on first install
 browserAPI.runtime.onInstalled.addListener((details) => {
+  createExtensionContextMenu();
+
   if (details.reason === "install") {
     browserAPI.tabs.create({
       url: browserAPI.runtime.getURL("pub/welcome-page.html")
     });
   }
+});
+
+// Ensure context menu exists when the browser starts
+browserAPI.runtime.onStartup?.addListener(() => {
+  createExtensionContextMenu();
+});
+
+function createExtensionContextMenu() {
+  if (!browserAPI.contextMenus?.create) {
+    return;
+  }
+
+  // Remove only this extension menu item to avoid affecting future entries.
+  browserAPI.contextMenus.remove(contextMenuIdOpenFmhy, () => {
+    browserAPI.contextMenus.create({
+      id: contextMenuIdOpenFmhy,
+      title: "Open FMHY.net",
+      contexts: ["action"]
+    });
+  });
+}
+
+browserAPI.contextMenus?.onClicked.addListener((info) => {
+  if (info.menuItemId !== contextMenuIdOpenFmhy) {
+    return;
+  }
+
+  browserAPI.tabs.create({
+    url: fmhyWebsiteURL
+  });
 });
 
 // URLs and Constants
@@ -237,6 +271,7 @@ const searchEngines = [
   "google.com",
   "bing.com",
   "duckduckgo.com",
+  "kagi.com",
   "librey.org",
   "4get.ca",
   "mojeek.com",
@@ -909,8 +944,10 @@ function checkSiteAndUpdatePageAction(tabId, url) {
   updatePageAction(status, tabId);
 
   // Handle unsafe sites that need warning page redirection if not approved
-  if (status === "unsafe" && !approvedUrls.get(tabId)?.includes(rootUrl)) {
-    openWarningPage(tabId, rootUrl);
+  const tabApprovedUrls = approvedUrls.get(tabId) || [];
+  const isApproved = tabApprovedUrls.includes(normalizedUrl) || tabApprovedUrls.includes(rootUrl);
+  if (status === "unsafe" && !isApproved) {
+    openWarningPage(tabId, url);
   }
 }
 

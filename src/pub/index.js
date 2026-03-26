@@ -56,8 +56,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   function parseMarkdown(md) {
     if (!md) return "";
 
-    // Store images to protect from URL linking
+    // Store images/links to protect from URL linking
     const imgTags = [];
+    const markdownLinks = [];
 
     let result = md
       // Remove the main header (#### Title) since we show "FMHY Note" already
@@ -83,13 +84,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Italic
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       // Markdown links [text](url) - use placeholder to avoid double-linking
-      .replace(/\[(.*?)\]\((.*?)\)/g, '[[LINK:$2:$1]]');
+      .replace(/\[(.*?)\]\((.*?)\)/g, (match, text, url) => {
+        markdownLinks.push(`<a href="${url}" target="_blank">${text}</a>`);
+        return `[[MDLINK_${markdownLinks.length - 1}]]`;
+      });
 
     // Raw URLs (convert before restoring markdown links and images)
     result = result.replace(/(https?:\/\/[^\s<>\)\]]+)/g, '<a href="$1" target="_blank">$1</a>');
 
     // Restore markdown links from placeholders
-    result = result.replace(/\[\[LINK:(.*?):(.*?)\]\]/g, '<a href="$1" target="_blank">$2</a>');
+    result = result.replace(/\[\[MDLINK_(\d+)\]\]/g, (match, index) => markdownLinks[parseInt(index)]);
 
     // Restore images from placeholders
     result = result.replace(/\[\[HTMLIMG_(\d+)\]\]/g, (match, index) => imgTags[parseInt(index)]);
