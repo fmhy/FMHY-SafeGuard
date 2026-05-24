@@ -24,6 +24,11 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -85,6 +90,12 @@ jobs:
           cd ..
           mv FMHY-SafeGuard_${{ env.VERSION }}.firefox.zip FMHY-SafeGuard_${{ env.VERSION }}.firefox.xpi
 
+      - name: Build Safari Source Extension
+        run: |
+          node scripts/build-safari-source.mjs
+          cd dist/safari
+          zip -r ../FMHY-SafeGuard_${{ env.VERSION }}.safari-source.zip ./*
+
       - name: Upload Chrome Extension
         uses: actions/upload-release-asset@v1
         env:
@@ -104,3 +115,13 @@ jobs:
           asset_path: dist/FMHY-SafeGuard_${{ env.VERSION }}.firefox.xpi
           asset_name: FMHY-SafeGuard_${{ env.VERSION }}.firefox.xpi
           asset_content_type: application/x-xpinstall
+
+      - name: Upload Safari Source Extension
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/FMHY-SafeGuard_${{ env.VERSION }}.safari-source.zip
+          asset_name: FMHY-SafeGuard_${{ env.VERSION }}.safari-source.zip
+          asset_content_type: application/zip

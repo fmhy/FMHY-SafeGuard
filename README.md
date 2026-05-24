@@ -92,3 +92,7 @@ For questions or support, feel free to open an issue on [GitHub](https://github.
 - [FMHY Edit](https://github.com/fmhy/edit), the service used to detect safe sites, created by FMHY
 - [FMHY Related Sites/Projects List](https://github.com/fmhy/FMHY-SafeGuard/blob/main/fmhy-filterlist.txt), the service used to detect FMHY related sites/projects, created by FMHY
 - [Kenneth Hendricks](https://github.com/kenhendricks00), the original creator of the FMHY SafeGuard Extension
+
+# Safari Source Build
+
+Safari Web Extension source setup is documented in [docs/Safari.md](docs/Safari.md). Windows can prepare `dist/safari`, while final Safari conversion, signing, and in-browser testing still require macOS with Xcode.

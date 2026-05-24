@@ -7,7 +7,7 @@
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
 // Track processed elements to avoid reprocessing
-const processedLinks = new WeakSet();
+let processedLinks = new WeakSet();
 const processedDomains = new Set();
 const highlightCountTrusted = new Map();
 const highlightCountUntrusted = new Map();
