@@ -1,0 +1,8 @@
+{
+  "name": "fmhy-safeguard",
+  "private": true,
+  "scripts": {
+    "build:safari-source": "node scripts/build-safari-source.mjs",
+    "validate:manifests": "node scripts/validate-manifests.mjs"
+  }
+}

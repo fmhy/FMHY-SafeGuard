@@ -2,6 +2,44 @@
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 const contextMenuIdOpenFmhy = "open-fmhy-net";
 const fmhyWebsiteURL = "https://fmhy.net/";
+const syncStorage = browserAPI.storage?.sync ?? browserAPI.storage?.local;
+
+async function getFromStorage(area, keys) {
+  if (!area?.get) {
+    return {};
+  }
+
+  return area.get(keys);
+}
+
+async function getWarningPageSetting() {
+  const localSettings = await getFromStorage(browserAPI.storage?.local, {
+    showWarning: true,
+  });
+
+  if (syncStorage?.get && syncStorage !== browserAPI.storage?.local) {
+    const syncSettings = await getFromStorage(syncStorage, {
+      warningPage: localSettings.showWarning,
+    });
+
+    if (syncSettings.warningPage !== undefined) {
+      return syncSettings.warningPage;
+    }
+  }
+
+  return localSettings.showWarning !== false;
+}
+
+function updateActionIcon(tabId, path) {
+  if (!browserAPI.action?.setIcon) {
+    return;
+  }
+
+  browserAPI.action.setIcon({
+    tabId,
+    path,
+  });
+}
 
 // Open welcome page on first install
 browserAPI.runtime.onInstalled.addListener((details) => {
@@ -19,18 +57,24 @@ browserAPI.runtime.onStartup?.addListener(() => {
   createExtensionContextMenu();
 });
 
-function createExtensionContextMenu() {
+async function createExtensionContextMenu() {
   if (!browserAPI.contextMenus?.create) {
     return;
   }
 
+  try {
+    if (browserAPI.contextMenus.remove) {
+      await browserAPI.contextMenus.remove(contextMenuIdOpenFmhy);
+    }
+  } catch (error) {
+    // Ignore missing-menu errors and recreate the entry below.
+  }
+
   // Remove only this extension menu item to avoid affecting future entries.
-  browserAPI.contextMenus.remove(contextMenuIdOpenFmhy, () => {
-    browserAPI.contextMenus.create({
-      id: contextMenuIdOpenFmhy,
-      title: "Open FMHY.net",
-      contexts: ["action"]
-    });
+  browserAPI.contextMenus.create({
+    id: contextMenuIdOpenFmhy,
+    title: "Open FMHY.net",
+    contexts: ["action"]
   });
 }
 
@@ -869,10 +913,7 @@ function updatePageAction(status, tabId) {
 
   const icon = icons[status] || icons["default"];
 
-  browserAPI.action.setIcon({
-    tabId: tabId,
-    path: icon,
-  });
+  updateActionIcon(tabId, icon);
 }
 
 async function notifySettingsPage() {
@@ -980,6 +1021,11 @@ async function shouldUpdate() {
 }
 
 async function setupUpdateSchedule() {
+  if (!browserAPI.alarms?.create || !browserAPI.alarms?.clearAll) {
+    console.warn("Alarms API is unavailable; scheduled updates are disabled.");
+    return;
+  }
+
   await browserAPI.alarms.clearAll();
 
   // Get the user's preferred update frequency from storage
@@ -1371,11 +1417,9 @@ async function openWarningPage(tabId, unsafeUrl) {
   }
 
   // Fetch the warning page setting
-  const { warningPage } = await browserAPI.storage.sync.get({
-    warningPage: true,
-  });
+  const warningPageEnabled = await getWarningPageSetting();
 
-  if (!warningPage) {
+  if (!warningPageEnabled) {
     console.log("Warning page is disabled by the user settings.");
     return;
   }
@@ -1430,7 +1474,7 @@ browserAPI.tabs.onActivated.addListener(async (activeInfo) => {
   }
 });
 
-browserAPI.alarms.onAlarm.addListener(async (alarm) => {
+browserAPI.alarms?.onAlarm?.addListener(async (alarm) => {
   if (alarm.name === "checkUpdate") {
     const needsUpdate = await shouldUpdate();
     if (needsUpdate) {
@@ -1657,20 +1701,23 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { tabId, url } = message;
     const rootUrl = extractRootUrl(url);
 
-    // Fetch existing approved URLs from storage
-    browserAPI.storage.local.get("approvedUrls", (result) => {
+    (async () => {
+      const result = await browserAPI.storage.local.get("approvedUrls");
       const approvedUrls = result.approvedUrls || [];
 
       // Add the root URL if not already approved
       if (!approvedUrls.includes(rootUrl)) {
         approvedUrls.push(rootUrl);
-        browserAPI.storage.local.set({ approvedUrls });
+        await browserAPI.storage.local.set({ approvedUrls });
         console.log(`approveSite: ${rootUrl} approved globally.`);
       }
 
       // Set the toolbar icon to "unsafe" immediately
       updatePageAction("unsafe", tabId);
       sendResponse({ status: "approved" });
+    })().catch((error) => {
+      console.error("approveSite failed:", error);
+      sendResponse({ status: "error", error: error.message });
     });
     return true;
   }
