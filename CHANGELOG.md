@@ -2,7 +2,7 @@
 
 ## v1.4.0 (07/17/2026)
 
-#### **Performance**
+#### **⚡ Performance**
 - Indexed shared-host resources by hostname and first path segment, avoiding full candidate-list scans on sites such as GitHub and Rentry.
 - Replaced Brave Search's 50 ms full-page polling loop with mutation-driven link processing and a single reusable observer.
 - Reprocesses reused search-result links only when their destination changes.
@@ -11,7 +11,7 @@
 - Writes only missing default settings during startup and reads the update schedule in one storage operation.
 - Removed a stale FMHY guide request that returned a permanent 404.
 
-#### **Security**
+#### **🔒 Security**
 - Replaced dynamic HTML assignments in popup notes, status messages, and translations with a shared allowlist sanitizer.
 - Restricted note links and images to HTTP(S), added safe external-link attributes, and disabled image referrer leakage.
 
