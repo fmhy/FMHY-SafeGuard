@@ -23,6 +23,10 @@ const warningPageScript = fs.readFileSync(
   path.join(__dirname, "..", "src", "pub", "warning-page.js"),
   "utf8",
 );
+const i18nScript = fs.readFileSync(
+  path.join(__dirname, "..", "src", "js", "i18n.js"),
+  "utf8",
+);
 const fmhyHighlightScriptPath = path.join(
   __dirname,
   "..",
@@ -40,7 +44,9 @@ const firefoxManifest = fs.readFileSync(
 );
 
 function loadFunction(source, name) {
-  const start = source.indexOf(`function ${name}(`);
+  const asyncStart = source.indexOf(`async function ${name}(`);
+  const start =
+    asyncStart !== -1 ? asyncStart : source.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, `${name} should be defined`);
 
   const bodyStart = source.indexOf("{", start);
@@ -101,20 +107,33 @@ const sharedResourceHosts = new Set([
 ]);
 
 test("processed link tracking can be reset after settings change", () => {
-  assert.match(contentScript, /let processedLinks = new WeakSet\(\);/);
-  assert.match(contentScript, /processedLinks = new WeakSet\(\);/);
+  assert.match(contentScript, /let processedLinks = new WeakMap\(\);/);
+  assert.match(contentScript, /processedLinks = new WeakMap\(\);/);
 });
 
 test("processed links use an extension-owned data attribute", () => {
   assert.match(
     contentScript,
-    /querySelectorAll\("a\[href\]:not\(\[data-fmhy-processed\]\)"\)/,
-  );
-  assert.match(
-    contentScript,
     /link\.setAttribute\("data-fmhy-processed", "true"\);/,
   );
   assert.doesNotMatch(contentScript, /classList\.add\("fmhy-processed"\)/);
+});
+
+test("links are reprocessed only when their destination changes", () => {
+  assert.match(
+    contentScript,
+    /if \(processedLinks\.get\(link\) === link\.href\) return;/,
+  );
+  assert.match(contentScript, /processedLinks\.set\(link, link\.href\);/);
+});
+
+test("Brave highlighting is mutation-driven instead of polling the full page", () => {
+  assert.doesNotMatch(
+    contentScript,
+    /braveSearchBadgeInterval\s*=\s*setInterval\(/,
+  );
+  assert.match(contentScript, /let pageObserver = null;/);
+  assert.match(contentScript, /pageObserver\?\.disconnect\(\);/);
 });
 
 test("warning redirects honor the setting saved by the options page", () => {
@@ -204,6 +223,21 @@ test("unsafe reasons are rendered without interpolating remote text as HTML", ()
   assert.match(popupScript, /link\.textContent = url/);
   assert.match(warningPageScript, /link\.textContent = url/);
   assert.match(contentScript, /document\.createTextNode/);
+});
+
+test("popup and translations render rich text through the shared sanitizer", () => {
+  assert.doesNotMatch(popupScript, /\.innerHTML\s*=/);
+  assert.doesNotMatch(i18nScript, /\.innerHTML\s*=/);
+  assert.match(i18nScript, /function renderSanitizedMarkup\(/);
+  assert.match(i18nScript, /protocol === "https:" \|\| protocol === "http:"/);
+  assert.match(
+    popupScript,
+    /window\.i18n\.renderSanitizedMarkup\(\s*noteContent,/,
+  );
+  assert.match(
+    popupScript,
+    /window\.i18n\.renderSanitizedMarkup\(\s*statusMessage,/,
+  );
 });
 
 test("root-only popup labels omit their trailing slash", () => {
@@ -510,6 +544,217 @@ test("resource matching only scans candidates for the current hostname", () => {
     "https://target.example/item",
   );
   assert.equal(comparisonCount, 1);
+});
+
+test("shared-host matching narrows candidates by the first path segment", () => {
+  const normalizeUrl = loadFunction(backgroundScript, "normalizeUrl");
+  const normalizeResourceUrl = loadFunctionWithDependencies(
+    backgroundScript,
+    "normalizeResourceUrl",
+    { normalizeUrl },
+  );
+  const buildResourceIndex = loadFunctionWithDependencies(
+    backgroundScript,
+    "buildResourceIndex",
+    { normalizeResourceUrl },
+  );
+
+  let comparisonCount = 0;
+  const findMatchingListedResource = loadFunctionWithDependencies(
+    backgroundScript,
+    "findMatchingListedResource",
+    {
+      normalizeResourceUrl,
+      isSharedResourceHost: (hostname) => hostname === "github.com",
+      urlMatchesListedResource: (currentUrl, listedUrl) => {
+        comparisonCount += 1;
+        return currentUrl.startsWith(`${listedUrl}/`);
+      },
+    },
+  );
+  const resources = Array.from(
+    { length: 10000 },
+    (_, index) => `https://github.com/owner-${index}/project`,
+  );
+  resources.push("https://github.com/target-owner/project");
+  const resourceIndex = buildResourceIndex(resources);
+
+  assert.equal(
+    findMatchingListedResource(
+      "https://github.com/target-owner/project/issues/1",
+      resourceIndex,
+    ),
+    "https://github.com/target-owner/project",
+  );
+  assert.ok(
+    comparisonCount <= 2,
+    `expected at most 2 candidate comparisons, received ${comparisonCount}`,
+  );
+});
+
+test("FMHY resource guides are fetched only once per refresh", async () => {
+  const fetchResourceLists = loadFunctionWithDependencies(
+    backgroundScript,
+    "fetchResourceLists",
+    {
+      safeListURLs: [
+        "https://example.com/first.md",
+        "https://example.com/second.md",
+      ],
+      extractUrlsFromMarkdown: () => [],
+      extractFmhyResourceMap: () => ({}),
+      extractStarredUrlsFromMarkdown: () => [],
+      normalizeResourceUrl: (url) => url,
+      buildResourceIndex: () => new Map(),
+      browserAPI: {
+        storage: {
+          local: {
+            set: async () => {},
+          },
+        },
+      },
+      resourceIdentityVersion: 2,
+      safeSites: [],
+      starredSites: [],
+      safeSiteIndex: new Map(),
+      starredSiteIndex: new Map(),
+      fmhyResourceMap: {},
+      checkedTabUrls: new Map(),
+      console: {
+        log: () => {},
+        warn: () => {},
+        error: () => {},
+      },
+      fetch: async () => {
+        fetchResourceLists.requestCount += 1;
+        return {
+          ok: true,
+          text: async () => "# Guide",
+        };
+      },
+    },
+  );
+  fetchResourceLists.requestCount = 0;
+
+  await fetchResourceLists();
+
+  assert.equal(fetchResourceLists.requestCount, 2);
+  assert.doesNotMatch(backgroundScript, /async function fetchSafeSites\(/);
+  assert.doesNotMatch(backgroundScript, /async function fetchStarredSites\(/);
+  assert.doesNotMatch(backgroundScript, /docs\/nsfwpiracy\.md/);
+});
+
+test("compact domain indexes deduplicate normalized hostnames", () => {
+  const extractUniqueHostnamesFromUrls = loadFunction(
+    backgroundScript,
+    "extractUniqueHostnamesFromUrls",
+  );
+
+  assert.deepEqual(
+    extractUniqueHostnamesFromUrls([
+      "https://www.example.com/path",
+      "https://example.com/other",
+      "https://github.com/fmhy/FMHY-SafeGuard",
+      "not a valid URL",
+    ]),
+    ["example.com", "github.com"],
+  );
+});
+
+test("content scripts prefer compact domain indexes over full resource lists", async () => {
+  const requestedKeys = [];
+  const loadDomainLists = loadFunctionWithDependencies(
+    contentScript,
+    "loadDomainLists",
+    {
+      browserAPI: {
+        storage: {
+          local: {
+            get: async (keys) => {
+              requestedKeys.push(keys);
+              return {
+                unsafeDomainList: ["unsafe.example"],
+                safeDomainList: ["safe.example"],
+                unsafeReasons: {},
+              };
+            },
+          },
+        },
+      },
+      unsafeDomains: new Set(),
+      safeDomains: new Set(),
+      unsafeReasons: {},
+      normalizeDomain: (hostname) => hostname.replace(/^www\./, "").toLowerCase(),
+      applyUserOverrides: () => {},
+      console: {
+        log: () => {},
+        error: () => {},
+      },
+    },
+  );
+
+  await loadDomainLists();
+
+  assert.deepEqual(requestedKeys, [
+    ["unsafeDomainList", "safeDomainList", "unsafeReasons"],
+  ]);
+});
+
+test("settings initialization writes only missing defaults", async () => {
+  const writes = [];
+  const initializeSettings = loadFunctionWithDependencies(
+    backgroundScript,
+    "initializeSettings",
+    {
+      browserAPI: {
+        storage: {
+          local: {
+            get: async () => ({
+              theme: "dark",
+              showWarning: false,
+            }),
+            set: async (settings) => writes.push(settings),
+          },
+        },
+      },
+      console: { log() {} },
+    },
+  );
+
+  await initializeSettings();
+
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].theme, undefined);
+  assert.equal(writes[0].showWarning, undefined);
+  assert.equal(writes[0].updateFrequency, "daily");
+  assert.equal(writes[0].highlightTrusted, true);
+});
+
+test("update checks read their schedule in one storage operation", async () => {
+  const storageGets = [];
+  const shouldUpdate = loadFunctionWithDependencies(
+    backgroundScript,
+    "shouldUpdate",
+    {
+      browserAPI: {
+        storage: {
+          local: {
+            get: async (keys) => {
+              storageGets.push(keys);
+              return {
+                lastUpdated: new Date().toISOString(),
+                updateFrequency: "daily",
+              };
+            },
+          },
+        },
+      },
+      console: { error() {} },
+    },
+  );
+
+  assert.equal(await shouldUpdate(), false);
+  assert.deepEqual(storageGets, [["lastUpdated", "updateFrequency"]]);
 });
 
 test("the same tab URL is only checked once per navigation", () => {

@@ -38,6 +38,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const reasonContent = document.getElementById("reason-content");
   const noteContainer = document.getElementById("note-container");
   const noteContent = document.getElementById("note-content");
+  const noteMarkupTags = [
+    "P",
+    "STRONG",
+    "EM",
+    "A",
+    "IMG",
+    "CODE",
+    "LI",
+    "UL",
+    "BR",
+  ];
 
   const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
@@ -245,7 +256,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (response && response.note) {
             const htmlContent = parseMarkdown(response.note);
             console.log("fetchNoteForSite: Parsed HTML:", htmlContent.substring(0, 100));
-            noteContent.innerHTML = htmlContent;
+            window.i18n.renderSanitizedMarkup(
+              noteContent,
+              htmlContent,
+              noteMarkupTags
+            );
             noteContainer.classList.add("visible");
             console.log(`fetchNoteForSite: Displayed note for: ${response.slug}`);
           } else {
@@ -531,7 +546,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     statusIcon.src = icons[status] || icons["unknown"];
     statusIcon.alt = status === "no_data" ? "Not listed in FMHY" : "Site status";
-    statusMessage.innerHTML = message || "An unknown error occurred.";
+    window.i18n.renderSanitizedMarkup(
+      statusMessage,
+      message || "An unknown error occurred."
+    );
 
     statusIcon.classList.add("active");
     setTimeout(() => statusIcon.classList.remove("active"), 300);

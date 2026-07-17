@@ -7,16 +7,14 @@
 const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
 // Track processed elements to avoid reprocessing
-let processedLinks = new WeakSet();
+let processedLinks = new WeakMap();
 const processedDomains = new Set();
 const highlightCountTrusted = new Map();
 const highlightCountUntrusted = new Map();
 
-// Timers for periodic checking
+// Dynamic-page processing state
 let reprocessTimer = null;
-let braveSearchInterval = null;
-let braveScrollTimer = null;
-let braveSearchBadgeInterval = null;
+let pageObserver = null;
 
 // Helper function to find a parent element by tag name
 function findParentByTag(element, maxDepth, tagNames) {
@@ -192,26 +190,37 @@ async function loadSettings() {
 // Load domain lists from extension storage
 async function loadDomainLists() {
   try {
-    const { unsafeSites, safeSiteList, unsafeReasons: storedReasons } = await browserAPI.storage.local.get([
-      "unsafeSites",
-      "safeSiteList",
+    const compactData = await browserAPI.storage.local.get([
+      "unsafeDomainList",
+      "safeDomainList",
       "unsafeReasons",
     ]);
+    let unsafeDomainList = Array.isArray(compactData.unsafeDomainList)
+      ? compactData.unsafeDomainList
+      : null;
+    let safeDomainList = Array.isArray(compactData.safeDomainList)
+      ? compactData.safeDomainList
+      : null;
 
-    if (unsafeSites && Array.isArray(unsafeSites)) {
-      unsafeDomains = new Set(
-        unsafeSites.map((site) => normalizeDomain(new URL(site).hostname))
-      );
+    // Preserve compatibility with data cached by older extension versions.
+    const fallbackKeys = [];
+    if (!unsafeDomainList) fallbackKeys.push("unsafeSites");
+    if (!safeDomainList) fallbackKeys.push("safeSiteList");
+    if (fallbackKeys.length > 0) {
+      const fallbackData = await browserAPI.storage.local.get(fallbackKeys);
+      if (!unsafeDomainList) {
+        unsafeDomainList = extractDomainsFromUrls(fallbackData.unsafeSites);
+      }
+      if (!safeDomainList) {
+        safeDomainList = extractDomainsFromUrls(fallbackData.safeSiteList);
+      }
     }
 
-    if (safeSiteList && Array.isArray(safeSiteList)) {
-      safeDomains = new Set(
-        safeSiteList.map((site) => normalizeDomain(new URL(site).hostname))
-      );
-    }
+    unsafeDomains = new Set(unsafeDomainList || []);
+    safeDomains = new Set(safeDomainList || []);
 
-    if (storedReasons) {
-      unsafeReasons = storedReasons;
+    if (compactData.unsafeReasons) {
+      unsafeReasons = compactData.unsafeReasons;
     }
 
     // Apply user overrides
@@ -223,6 +232,20 @@ async function loadDomainLists() {
   } catch (error) {
     console.error("[FMHY SafeGuard] Error loading domain lists:", error);
   }
+}
+
+function extractDomainsFromUrls(urls) {
+  const domains = new Set();
+
+  for (const site of urls || []) {
+    try {
+      domains.add(normalizeDomain(new URL(site).hostname));
+    } catch (error) {
+      // Ignore malformed entries from legacy caches.
+    }
+  }
+
+  return [...domains];
 }
 
 // Apply user trusted/untrusted overrides
@@ -258,96 +281,67 @@ function processPage() {
     .forEach((link) => processLink(link, currentDomain));
 }
 
+function ensureBraveStyles() {
+  let style = document.getElementById("fmhy-brave-style");
+  if (!style) {
+    style = document.createElement("style");
+    style.id = "fmhy-brave-style";
+    document.head.appendChild(style);
+  }
+
+  style.textContent = `
+    a[data-fmhy-unsafe="true"] {
+      text-shadow: 0 0 4px ${settings.untrustedColor} !important;
+      font-weight: bold !important;
+    }
+
+    a[data-fmhy-safe="true"] {
+      text-shadow: 0 0 4px ${settings.trustedColor} !important;
+      font-weight: bold !important;
+    }
+
+    .fmhy-unsafe-badge {
+      display: inline-block !important;
+      color: #ffffff !important;
+      background-color: #ff0000 !important;
+      border-radius: 4px !important;
+      padding: 0 5px !important;
+      font-size: 12px !important;
+      font-weight: bold !important;
+      white-space: nowrap !important;
+      min-width: 95px !important;
+      width: fit-content !important;
+    }
+  `;
+}
+
 // Set up mutation observer to handle dynamically added content
 function setupObserver() {
   const currentDomain = normalizeDomain(window.location.hostname);
+  pageObserver?.disconnect();
+  pageObserver = null;
 
   // Skip setting up observer if not on a supported site
   if (!isSupportedSite(currentDomain)) {
     return;
   }
 
-  // Special handling for Brave Search - continuously recheck and re-add badges/highlighting for all site types
   if (currentDomain.includes("brave")) {
-    // Track domains we've processed to avoid repetitive work
-    const braveProcessedDomains = new Set();
-
-    // Set up a more frequent interval specifically for Brave Search
-    braveSearchBadgeInterval = setInterval(() => {
-      // Process all links in Brave Search results
-      document.querySelectorAll('a[href]').forEach(link => {
-        try {
-          if (!link.href || link.href.startsWith('javascript:') || link.href.startsWith('#')) {
-            return;
-          }
-
-          const linkDomain = normalizeDomain(new URL(link.href).hostname);
-
-          // Skip internal Brave links
-          if (linkDomain.includes('brave.com')) {
-            return;
-          }
-
-          // Always check all links, even if we've seen them before
-          // This ensures styling is reapplied if Brave removes it
-
-          // CASE 1: Unsafe sites (user untrusted or in unsafe list)
-          if (userUntrusted.has(linkDomain) ||
-            (!userTrusted.has(linkDomain) && unsafeDomains.has(linkDomain))) {
-
-            // Mark as unsafe
-            link.setAttribute('data-fmhy-unsafe', 'true');
-
-            // Apply highlighting with !important to ensure it's not overridden
-            link.style.setProperty('text-shadow', `0 0 4px ${settings.untrustedColor}`, 'important');
-            link.style.setProperty('font-weight', 'bold', 'important');
-
-            // Force style recalculation by toggling a property
-            link.style.display = 'inline';
-            link.style.display = '';
-
-            // Also apply a class for redundancy
-            link.classList.add('fmhy-highlighted-unsafe');
-
-            // Add badge for unsafe sites
-            const resultContainer = link.closest('article') ||
-              link.closest('li') ||
-              link.closest('.snippet') ||
-              findParentByTag(link, 5, ['ARTICLE', 'LI', 'DIV']);
-
-            if (resultContainer) {
-              const siteDiv = resultContainer.querySelector('div[class^="site svelte-"]');
-
-              if (siteDiv && !siteDiv.querySelector('.fmhy-unsafe-badge')) {
-                const badge = document.createElement('span');
-                badge.className = 'fmhy-unsafe-badge';
-                const reason = getReasonForDomain(linkDomain);
-                setUnsafeBadgeContent(badge, reason);
-                badge.dataset.domain = linkDomain;
-                siteDiv.appendChild(badge);
-              }
-            }
-          }
-          // CASE 2: Safe sites (user trusted or in safe list)
-          else if (userTrusted.has(linkDomain) || safeDomains.has(linkDomain)) {
-            // Mark as safe
-            link.setAttribute('data-fmhy-safe', 'true');
-
-            // Only add highlighting if the setting is enabled
-            if (settings.highlightTrusted) {
-              link.style.setProperty('text-shadow', `0 0 4px ${settings.trustedColor}`, 'important');
-              link.style.setProperty('font-weight', 'bold', 'important');
-            }
-          }
-        } catch (e) { }
-      });
-    }, 50); // Check more frequently to ensure styling persists
+    ensureBraveStyles();
   }
 
-  const observer = new MutationObserver((mutations) => {
+  pageObserver = new MutationObserver((mutations) => {
     let needsReprocess = false;
 
     for (const mutation of mutations) {
+      if (
+        mutation.type === "attributes" &&
+        mutation.target.tagName === "A"
+      ) {
+        processLink(mutation.target, currentDomain);
+        continue;
+      }
+
       // Check if existing badges were removed
       if (mutation.removedNodes && mutation.removedNodes.length) {
         for (const node of mutation.removedNodes) {
@@ -387,16 +381,16 @@ function setupObserver() {
       // Use setTimeout to avoid too frequent reprocessing
       clearTimeout(reprocessTimer);
       reprocessTimer = setTimeout(() => {
-        // Instead of full reprocessing, just scan for unprocessed links
-        document
-          .querySelectorAll("a[href]:not([data-fmhy-processed])")
-          .forEach((link) => processLink(link, currentDomain));
+        document.querySelectorAll("a[href]").forEach((link) => {
+          processedLinks.delete(link);
+          processLink(link, currentDomain);
+        });
       }, 100);
     }
   });
 
   // Watch for both childList and attributes changes, and subtree modifications
-  observer.observe(document.body, {
+  pageObserver.observe(document.body, {
     childList: true,
     subtree: true,
     attributes: true,
@@ -406,9 +400,10 @@ function setupObserver() {
 
 // Process a single link
 function processLink(link, currentDomain) {
-  // Skip if already processed
-  if (processedLinks.has(link)) return;
-  processedLinks.add(link);
+  // Skip unchanged links while allowing search engines to reuse an anchor for
+  // a different result.
+  if (processedLinks.get(link) === link.href) return;
+  processedLinks.set(link, link.href);
 
   // Use an extension-owned data attribute to avoid colliding with site classes.
   link.setAttribute("data-fmhy-processed", "true");
@@ -438,6 +433,11 @@ function processLink(link, currentDomain) {
       userUntrusted.has(linkDomain) ||
       (!userTrusted.has(linkDomain) && unsafeDomains.has(linkDomain))
     ) {
+      if (currentDomain.includes("brave")) {
+        link.setAttribute("data-fmhy-unsafe", "true");
+        link.removeAttribute("data-fmhy-safe");
+      }
+
       if (
         settings.highlightUntrusted &&
         getHighlightCount(highlightCountUntrusted, linkDomain) < 2
@@ -454,6 +454,11 @@ function processLink(link, currentDomain) {
     }
     // Handle trusted links
     else if (userTrusted.has(linkDomain) || safeDomains.has(linkDomain)) {
+      if (currentDomain.includes("brave")) {
+        link.setAttribute("data-fmhy-safe", "true");
+        link.removeAttribute("data-fmhy-unsafe");
+      }
+
       if (
         settings.highlightTrusted &&
         getHighlightCount(highlightCountTrusted, linkDomain) < 2
@@ -484,36 +489,6 @@ function addWarningBanner(link, reason = null) {
     try {
       // Mark the link with attribute for CSS styling
       link.setAttribute('data-fmhy-unsafe', 'true');
-
-      // Use the original highlighting approach with text shadow
-      link.style.setProperty('text-shadow', `0 0 4px ${settings.untrustedColor}`, 'important');
-      link.style.setProperty('font-weight', 'bold', 'important');
-
-      // Add CSS for the badge styling only
-      if (!document.getElementById('fmhy-brave-style')) {
-        const style = document.createElement('style');
-        style.id = 'fmhy-brave-style';
-        style.textContent = `
-          a[data-fmhy-unsafe="true"] {
-            text-shadow: 0 0 4px ${settings.untrustedColor} !important;
-            font-weight: bold !important;
-          }
-
-          .fmhy-unsafe-badge {
-            display: inline-block !important;
-            color: #ffffff !important;
-            background-color: #ff0000 !important;
-            border-radius: 4px !important;
-            padding: 0px 5px !important;
-            font-size: 12px !important;
-            font-weight: bold !important;
-            white-space: nowrap !important;
-            min-width: 95px !important;
-            width: fit-content !important;
-          }
-        `;
-        document.head.appendChild(style);
-      }
 
       // Find the closest search result container
       let resultContainer = link.closest('article') || link.closest('li') || link.closest('.snippet');
@@ -672,29 +647,21 @@ function refreshPage() {
     .then(() => loadDomainLists())
     .then(() => {
       // Clear processed state and reprocess
-      // Note: WeakSet doesn't support clear(), create a new instance instead
-      processedLinks = new WeakSet();
+      // WeakMap does not support clear(), so create a fresh instance.
+      processedLinks = new WeakMap();
       processedDomains.clear();
       highlightCountTrusted.clear();
       highlightCountUntrusted.clear();
 
-      // Clear any existing Brave Search interval and restart the observer
-      if (braveSearchBadgeInterval) {
-        clearInterval(braveSearchBadgeInterval);
-        braveSearchBadgeInterval = null;
-      }
-
-      // Restart the processing
+      // Restart processing with a single fresh observer.
       processPage();
       setupObserver();
     });
 }
 
-// Clean up timers when the page is unloaded
+// Clean up dynamic-page work when the page is unloaded
 window.addEventListener('unload', () => {
-  if (braveSearchBadgeInterval) clearInterval(braveSearchBadgeInterval);
-  if (braveSearchInterval) clearInterval(braveSearchInterval);
-  if (braveScrollTimer) clearTimeout(braveScrollTimer);
+  pageObserver?.disconnect();
   if (reprocessTimer) clearTimeout(reprocessTimer);
 });
 

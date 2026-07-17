@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.0 (07/17/2026)
+
+#### **Performance**
+- Indexed shared-host resources by hostname and first path segment, avoiding full candidate-list scans on sites such as GitHub and Rentry.
+- Replaced Brave Search's 50 ms full-page polling loop with mutation-driven link processing and a single reusable observer.
+- Reprocesses reused search-result links only when their destination changes.
+- Fetches each FMHY guide once per refresh and derives safe, starred, and guide-location data from the same response.
+- Stores compact safe and unsafe domain indexes so search pages no longer need to deserialize the full resource URL lists.
+- Writes only missing default settings during startup and reads the update schedule in one storage operation.
+- Removed a stale FMHY guide request that returned a permanent 404.
+
+#### **Security**
+- Replaced dynamic HTML assignments in popup notes, status messages, and translations with a shared allowlist sanitizer.
+- Restricted note links and images to HTTP(S), added safe external-link attributes, and disabled image referrer leakage.
+
 ## v1.3.9 (07/17/2026)
 
 #### **🐞 Bug Fixes**

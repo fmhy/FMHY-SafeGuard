@@ -7,6 +7,76 @@
   // Cache for loaded translations
   let translations = {};
   let currentLanguage = "en";
+  const DEFAULT_ALLOWED_MARKUP = ["STRONG"];
+
+  function isSafeRemoteUrl(value) {
+    try {
+      const protocol = new URL(value).protocol;
+      return protocol === "https:" || protocol === "http:";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function sanitizeMarkupNode(sourceNode, allowedTags) {
+    if (sourceNode.nodeType === 3) {
+      return document.createTextNode(sourceNode.textContent);
+    }
+
+    const fragment = document.createDocumentFragment();
+    if (sourceNode.nodeType !== 1) return fragment;
+
+    const tagName = sourceNode.tagName.toUpperCase();
+    const destination = allowedTags.has(tagName)
+      ? document.createElement(tagName.toLowerCase())
+      : fragment;
+
+    if (tagName === "A" && destination !== fragment) {
+      const href = sourceNode.getAttribute("href");
+      if (isSafeRemoteUrl(href)) {
+        destination.href = href;
+        destination.target = "_blank";
+        destination.rel = "noopener noreferrer";
+      } else {
+        for (const child of sourceNode.childNodes) {
+          fragment.append(sanitizeMarkupNode(child, allowedTags));
+        }
+        return fragment;
+      }
+    } else if (tagName === "IMG" && destination !== fragment) {
+      const src = sourceNode.getAttribute("src");
+      if (!isSafeRemoteUrl(src)) return fragment;
+      destination.src = src;
+      destination.alt = sourceNode.getAttribute("alt") || "";
+      destination.loading = "lazy";
+      destination.referrerPolicy = "no-referrer";
+    }
+
+    for (const child of sourceNode.childNodes) {
+      destination.append(sanitizeMarkupNode(child, allowedTags));
+    }
+
+    return destination;
+  }
+
+  function renderSanitizedMarkup(
+    container,
+    markup,
+    allowedTagNames = DEFAULT_ALLOWED_MARKUP
+  ) {
+    const parsedDocument = new DOMParser().parseFromString(
+      String(markup || ""),
+      "text/html"
+    );
+    const allowedTags = new Set(allowedTagNames);
+    const content = document.createDocumentFragment();
+
+    for (const child of parsedDocument.body.childNodes) {
+      content.append(sanitizeMarkupNode(child, allowedTags));
+    }
+
+    container.replaceChildren(content);
+  }
 
   // Supported languages
   const SUPPORTED_LANGUAGES = ["en", "es", "ru", "de", "pt", "fr", "ja"];
@@ -93,12 +163,12 @@
       }
     });
 
-    // Translate elements with data-i18n-html attribute (innerHTML)
+    // Translate the limited rich-text messages used by the warning page.
     document.querySelectorAll("[data-i18n-html]").forEach((element) => {
       const key = element.getAttribute("data-i18n-html");
       const message = getMessageFromTranslations(key);
       if (message && message !== key) {
-        element.innerHTML = message;
+        renderSanitizedMarkup(element, message);
       }
     });
 
@@ -158,6 +228,7 @@
   window.i18n = {
     getMessage: getMessageFromTranslations,
     applyTranslations: applyTranslations,
+    renderSanitizedMarkup,
     setLanguage: async function(lang) {
       if (SUPPORTED_LANGUAGES.includes(lang) || lang === "auto") {
         if (lang === "auto") {
