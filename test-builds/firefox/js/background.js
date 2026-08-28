@@ -1035,25 +1035,38 @@ async function fetchFilterLists() {
     let unsafeSites = [];
     let potentiallyUnsafeSites = [];
     let fmhySites = [];
+    // Minimum expected entries; guards against a compromised/MITM'd host
+    // silently serving a truncated or emptied list that would drop protection.
+    const MIN_FILTERLIST_ENTRIES = 50;
 
     if (unsafeResponse.ok) {
       const unsafeText = await unsafeResponse.text();
-      unsafeSites = extractUrlsFromFilterList(unsafeText);
-      unsafeSitesRegex = generateRegexFromList(unsafeSites);
-      // Also generate hostname-only regex for domain-level matching
-      const unsafeHostnames = extractHostnamesFromUrls(unsafeSites);
-      unsafeHostnamesRegex = generateRegexFromList(unsafeHostnames);
+      const fetchedUnsafeSites = extractUrlsFromFilterList(unsafeText);
+      if (fetchedUnsafeSites.length >= MIN_FILTERLIST_ENTRIES) {
+        unsafeSites = fetchedUnsafeSites;
+        unsafeSitesRegex = generateRegexFromList(unsafeSites);
+        // Also generate hostname-only regex for domain-level matching
+        const unsafeHostnames = extractHostnamesFromUrls(unsafeSites);
+        unsafeHostnamesRegex = generateRegexFromList(unsafeHostnames);
+      } else {
+        console.error("Rejected unsafe filter list: suspiciously small or tampered response.");
+      }
     }
 
     if (potentiallyUnsafeResponse.ok) {
       const potentiallyUnsafeText = await potentiallyUnsafeResponse.text();
-      potentiallyUnsafeSites = extractUrlsFromFilterList(potentiallyUnsafeText);
-      potentiallyUnsafeSitesRegex = generateRegexFromList(
-        potentiallyUnsafeSites
-      );
-      // Also generate hostname-only regex for domain-level matching
-      const potentiallyUnsafeHostnames = extractHostnamesFromUrls(potentiallyUnsafeSites);
-      potentiallyUnsafeHostnamesRegex = generateRegexFromList(potentiallyUnsafeHostnames);
+      const fetchedPotentiallyUnsafeSites = extractUrlsFromFilterList(potentiallyUnsafeText);
+      if (fetchedPotentiallyUnsafeSites.length >= MIN_FILTERLIST_ENTRIES) {
+        potentiallyUnsafeSites = fetchedPotentiallyUnsafeSites;
+        potentiallyUnsafeSitesRegex = generateRegexFromList(
+          potentiallyUnsafeSites
+        );
+        // Also generate hostname-only regex for domain-level matching
+        const potentiallyUnsafeHostnames = extractHostnamesFromUrls(potentiallyUnsafeSites);
+        potentiallyUnsafeHostnamesRegex = generateRegexFromList(potentiallyUnsafeHostnames);
+      } else {
+        console.error("Rejected potentially-unsafe filter list: suspiciously small or tampered response.");
+      }
     }
 
     if (fmhyResponse.ok) {
