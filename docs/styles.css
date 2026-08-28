@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Inter";
-  src: url("../src/res/fonts/inter.woff2") format("woff2");
+  src: url("assets/fonts/inter.woff2") format("woff2");
   font-display: swap;
 }
 
@@ -263,7 +263,7 @@ button {
 }
 
 .theme-menu-caret {
-  --icon: url("../assets/icons/theme/caret-up-fill.svg");
+  --icon: url("assets/icons/theme/caret-up-fill.svg");
   position: absolute;
   top: -11px;
   right: 10px;
@@ -322,19 +322,19 @@ button {
 }
 
 .theme-icon-light {
-  --icon: url("../assets/icons/theme/sun.svg");
+  --icon: url("assets/icons/theme/sun.svg");
 }
 
 .theme-icon-dark {
-  --icon: url("../assets/icons/theme/moon.svg");
+  --icon: url("assets/icons/theme/moon.svg");
 }
 
 .theme-icon-amoled {
-  --icon: url("../assets/icons/theme/moon-stars.svg");
+  --icon: url("assets/icons/theme/moon-stars.svg");
 }
 
 .theme-icon-check {
-  --icon: url("../assets/icons/theme/check.svg");
+  --icon: url("assets/icons/theme/check.svg");
   width: 20px;
   height: 20px;
 }
