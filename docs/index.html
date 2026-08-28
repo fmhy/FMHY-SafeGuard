@@ -4,340 +4,201 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="FMHY SafeGuard checks sites and links against community-maintained FMHY data while you browse." />
+  <meta name="theme-color" content="#17181a" />
   <meta name="darkreader-lock" />
-  <title>FMHY SafeGuard</title>
-  <link rel="icon" type="image/x-icon"
-    href="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/logo.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <title>FMHY SafeGuard | FMHY knowledge in your toolbar</title>
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 
 <body>
-  <!-- Floating Navigation -->
-  <nav class="navbar">
-    <div class="nav-content">
-      <a href="#" class="nav-logo">
-        <img src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/logo.png"
-          alt="FMHY SafeGuard" />
-        <span>FMHY SafeGuard</span>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="navbar" aria-label="Primary navigation">
+      <a href="#main-content" class="brand" aria-label="FMHY SafeGuard home">
+        <img src="../assets/logo.png" alt="" width="30" height="30" />
+        <span>FMHY <strong>SafeGuard</strong></span>
       </a>
-      <div class="nav-center">
-        <ul class="nav-links">
-          <li><a href="#features" class="active">Features</a></li>
-          <li><a href="#installation">Installation</a></li>
-          <li><a href="#usage">Usage</a></li>
-          <li><a href="#support">Support</a></li>
-        </ul>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#usage">Usage</a></li>
+        <li><a href="#support">Support</a></li>
+      </ul>
+      <div class="nav-actions">
+        <div class="theme-picker" id="themePicker">
+          <button class="theme-trigger" id="themeTrigger" type="button" aria-haspopup="menu" aria-controls="themeMenu"
+            aria-expanded="false" aria-label="Choose theme">
+            <span class="theme-icon theme-icon-dark" id="themeTriggerIcon" aria-hidden="true"></span>
+          </button>
+          <div class="theme-menu" id="themeMenu" role="menu" aria-label="Choose theme" hidden>
+            <span class="theme-menu-caret" aria-hidden="true"></span>
+            <button class="theme-option" type="button" role="menuitemradio" data-theme-value="light" aria-checked="false">
+              <span class="theme-icon theme-icon-light" aria-hidden="true"></span>
+              <span>Light</span>
+              <span class="theme-icon theme-icon-check" aria-hidden="true"></span>
+            </button>
+            <button class="theme-option" type="button" role="menuitemradio" data-theme-value="dark" aria-checked="false">
+              <span class="theme-icon theme-icon-dark" aria-hidden="true"></span>
+              <span>Dark</span>
+              <span class="theme-icon theme-icon-check" aria-hidden="true"></span>
+            </button>
+            <button class="theme-option" type="button" role="menuitemradio" data-theme-value="amoled" aria-checked="false">
+              <span class="theme-icon theme-icon-amoled" aria-hidden="true"></span>
+              <span>AMOLED</span>
+              <span class="theme-icon theme-icon-check" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+        <a class="github-link" href="https://github.com/fmhy/FMHY-SafeGuard" target="_blank" rel="noreferrer"
+          aria-label="Open FMHY SafeGuard on GitHub">
+          <img src="../assets/icons/brands/github.svg" alt="" width="19" height="19" />
+        </a>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-controls="mobileMenu" aria-expanded="false">Menu</button>
       </div>
-      <div class="nav-right">
-        <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-          </svg>
-        </button>
-        <button class="menu-toggle" id="menuToggle" title="Menu">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" x2="20" y1="12" y2="12" />
-            <line x1="4" x2="20" y1="6" y2="6" />
-            <line x1="4" x2="20" y1="18" y2="18" />
-          </svg>
-        </button>
-      </div>
+    </nav>
+    <div class="mobile-menu" id="mobileMenu" hidden>
+      <a href="#features">Features</a>
+      <a href="#installation">Installation</a>
+      <a href="#usage">Usage</a>
+      <a href="#support">Support</a>
     </div>
-  </nav>
+  </header>
 
-  <div class="mobile-menu" id="mobileMenu">
-    <a href="#features">Features</a>
-    <a href="#installation">Installation</a>
-    <a href="#usage">Usage</a>
-    <a href="#support">Support</a>
-  </div>
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy reveal">
+        <p class="eyebrow">FMHY knowledge in your toolbar</p>
+        <h1 id="hero-title">FMHY, beside you.</h1>
+        <p class="hero-summary">SafeGuard checks sites and links against FMHY data while you browse.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#installation">Get SafeGuard</a>
+          <a class="button button-secondary" href="#features">See what it checks</a>
+        </div>
+      </div>
 
-  <div class="container">
-    <!-- Hero Section -->
-    <section class="hero">
-      <h1>FMHY SafeGuard</h1>
-      <p>Protect your browsing with real-time website safety checks powered by the FMHY Filterlist. Stay safe while
-        exploring the web with instant visual feedback.</p>
-      <div class="hero-buttons">
-        <a href="#installation" class="btn btn-primary">Get Started</a>
-        <a href="https://github.com/fmhy/FMHY-SafeGuard" class="btn btn-secondary" target="_blank">View on GitHub</a>
+      <div class="hero-popup-stage reveal">
+        <img class="popup-preview" src="../assets/header-v2.png"
+          alt="FMHY SafeGuard popup marking fmhy.net as an FMHY-related site" width="342" height="290" />
       </div>
     </section>
 
-    <!-- Status Icons Section -->
-    <section class="section">
-      <div class="section-card">
-        <h2>Website Safety Status</h2>
-        <p>FMHY SafeGuard categorizes websites into different safety levels with clear visual indicators:</p>
-        <div class="status-icons">
-          <div class="status-icon">
-            <img src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/icons/starred.png"
-              alt="Starred" />
-            <span>Starred</span>
-          </div>
-          <div class="status-icon">
-            <img src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/icons/safe.png"
-              alt="Safe" />
-            <span>Safe</span>
-          </div>
-          <div class="status-icon">
-            <img src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/icons/default.png"
-              alt="Unknown" />
-            <span>Unknown</span>
-          </div>
-          <div class="status-icon">
-            <img
-              src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/icons/potentially_unsafe.png"
-              alt="Potentially Unsafe" />
-            <span>Potentially Unsafe</span>
-          </div>
-          <div class="status-icon">
-            <img src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/icons/unsafe.png"
-              alt="Unsafe" />
-            <span>Unsafe</span>
+    <section class="status-strip reveal" aria-label="SafeGuard site statuses">
+      <article><img src="../assets/icons/starred.png" alt="" width="44" height="44" /><div><strong>Starred</strong><span>FMHY pick</span></div></article>
+      <article><img src="../assets/icons/safe.png" alt="" width="44" height="44" /><div><strong>Safe</strong><span>Trusted list</span></div></article>
+      <article><img src="../assets/icons/default.png" alt="" width="44" height="44" /><div><strong>Unknown</strong><span>No match</span></div></article>
+      <article><img src="../assets/icons/potentially_unsafe.png" alt="" width="44" height="44" /><div><strong>Caution</strong><span>Possible risk</span></div></article>
+      <article><img src="../assets/icons/unsafe.png" alt="" width="44" height="44" /><div><strong>Unsafe</strong><span>Known risk</span></div></article>
+    </section>
+
+    <section id="features" class="features-section" aria-labelledby="features-title">
+      <div class="section-intro reveal">
+        <h2 id="features-title">The useful parts of FMHY, attached to the page.</h2>
+        <p>SafeGuard gives each link a status and keeps the supporting details one click away.</p>
+      </div>
+
+      <div class="directory-layout">
+        <div class="feature-index reveal">
+          <article>
+            <span class="feature-name">Link highlighting</span>
+            <p>Mark safe and unsafe links in search results and ordinary pages.</p>
+          </article>
+          <article>
+            <span class="feature-name">Warning reasons</span>
+            <p>See why a domain was flagged and open the evidence when it is available.</p>
+          </article>
+          <article>
+            <span class="feature-name">FMHY notes</span>
+            <p>Bring wiki notes, passwords, and invite codes into the extension popup.</p>
+          </article>
+          <article>
+            <span class="feature-name">Personal controls</span>
+            <p>Change warning behavior, updates, colors, language, and theme.</p>
+          </article>
+        </div>
+        <div class="feature-visual reveal">
+          <img class="feature-popup-detail" src="../assets/header-starred-details.png"
+            alt="FMHY SafeGuard popup marking cs.rin.ru as starred and showing a password and FMHY note" width="342"
+            height="533" />
+          <div class="visual-note">
+            <strong>Context travels with the site.</strong>
+            <span>No separate lookup required.</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="section">
-      <div class="section-card">
-        <h2>Key Features</h2>
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-            </div>
-            <h3>Real-time Protection</h3>
-            <p>Instant feedback on website safety with visual toolbar icons that update automatically as you browse.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 16h5v5" />
-              </svg>
-            </div>
-            <h3>Updated Filterlists</h3>
-            <p>Utilizes frequently updated FMHY filterlist to ensure protection from the latest unsafe domains.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08" />
-                <path
-                  d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z" />
-              </svg>
-            </div>
-            <h3>Link Highlighting</h3>
-            <p>Seamlessly highlights links on search engines with colors and icons showing safety status.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-              </svg>
-            </div>
-            <h3>Pop-up Alerts</h3>
-            <p>Easy-to-read pop-ups that inform you about site status and allow further action.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" />
-              </svg>
-            </div>
-            <h3>Unsafe Site Reasons</h3>
-            <p>See exactly why a site is flagged as unsafe with detailed reasons and clickable evidence links.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
-                <path d="M15 3v4a2 2 0 0 0 2 2h4" />
-                <path d="M10 13h4" />
-                <path d="M10 17h4" />
-              </svg>
-            </div>
-            <h3>FMHY Notes</h3>
-            <p>View relevant notes from the FMHY wiki when visiting mapped websites with live fetching.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="7.5" cy="15.5" r="5.5" />
-                <path d="m21 2-9.6 9.6" />
-                <path d="m15.5 7.5 3 3L22 7l-3-3" />
-              </svg>
-            </div>
-            <h3>Site Credentials</h3>
-            <p>Automatically displays passwords and invite codes for sites that require them, with easy click-to-copy.
-            </p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-              </svg>
-            </div>
-            <h3>Theme Support</h3>
-            <p>Beautiful dark, light, and AMOLED themes with system preference detection for comfortable browsing.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </div>
-            <h3>Customizable Settings</h3>
-            <p>Adjust warning preferences, update frequency, and customize link highlighting colors.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                <path d="M2 12h20" />
-              </svg>
-            </div>
-            <h3>Multi-Language Support</h3>
-            <p>Available in 7 languages: English, Spanish, Russian, German, Portuguese, French, and Japanese.</p>
-          </div>
-        </div>
+    <section id="installation" class="installation-section" aria-labelledby="installation-title">
+      <div class="install-heading reveal">
+        <h2 id="installation-title">Pick your browser.</h2>
+        <p>Install from the official store, then let SafeGuard update its FMHY data automatically.</p>
+      </div>
+      <div class="store-grid reveal">
+        <a class="store-card" href="https://addons.mozilla.org/en-US/firefox/addon/fmhy-safeguard/" target="_blank"
+          rel="noreferrer">
+          <span class="store-card-copy">
+            <span class="store-card-type">Official add-on</span>
+            <strong>Firefox</strong>
+            <span class="store-card-action">Install <span aria-hidden="true">&#8594;</span></span>
+          </span>
+          <img class="store-mark" src="../assets/icons/brands/firefox-browser.svg" alt="" width="124" height="124" />
+        </a>
+        <a class="store-card" href="https://chromewebstore.google.com/detail/fmhy-safeguard/ihcppnlmkfeclmehgdhjkglkbmiemnmp"
+          target="_blank" rel="noreferrer">
+          <span class="store-card-copy">
+            <span class="store-card-type">Official extension</span>
+            <strong>Chrome</strong>
+            <span class="store-card-action">Install <span aria-hidden="true">&#8594;</span></span>
+          </span>
+          <img class="store-mark" src="../assets/icons/brands/google-chrome.svg" alt="" width="124" height="124" />
+        </a>
+        <a class="store-card release-link" href="https://github.com/fmhy/FMHY-SafeGuard/releases" target="_blank"
+          rel="noreferrer">
+          <span class="store-card-copy">
+            <span class="store-card-type">Manual install</span>
+            <strong>GitHub</strong>
+            <span class="store-card-action">View releases <span aria-hidden="true">&#8594;</span></span>
+          </span>
+          <img class="store-mark" src="../assets/icons/brands/github.svg" alt="" width="116" height="116" />
+        </a>
       </div>
     </section>
 
-    <!-- Installation Section -->
-    <section id="installation" class="section">
-      <div class="section-card">
-        <h2>Installation</h2>
-        <p>Get FMHY SafeGuard for your browser in just a few clicks:</p>
-        <div class="download-buttons">
-          <a href="https://addons.mozilla.org/en-US/firefox/addon/fmhy-safeguard/" class="download-btn" target="_blank">
-            <img
-              src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/firefox_addon_image.png"
-              alt="Get FMHY SafeGuard for Firefox" />
-          </a>
-          <a href="https://chromewebstore.google.com/detail/fmhy-safeguard/ihcppnlmkfeclmehgdhjkglkbmiemnmp"
-            class="download-btn" target="_blank">
-            <img
-              src="https://raw.githubusercontent.com/fmhy/FMHY-SafeGuard/refs/heads/main/assets/chrome_addon_image.png"
-              alt="Get FMHY SafeGuard for Chrome" />
-          </a>
-        </div>
-        <p>Or download the latest release from our <a href="https://github.com/fmhy/FMHY-SafeGuard/releases"
-            target="_blank">GitHub Releases page</a>.</p>
+    <section id="usage" class="usage-section" aria-labelledby="usage-title">
+      <div class="section-intro reveal">
+        <h2 id="usage-title">It works in the background.</h2>
+        <p>Browse normally. Open the popup only when you want more context.</p>
+      </div>
+      <div class="usage-steps reveal">
+        <article><h3>Install</h3><p>Add SafeGuard from your browser store.</p></article>
+        <article><h3>Browse</h3><p>The toolbar icon follows the current site's status.</p></article>
+        <article><h3>Inspect</h3><p>Open the popup for notes, reasons, passwords, or invite codes.</p></article>
+        <article><h3>Adjust</h3><p>Set the warning and highlighting behavior you prefer.</p></article>
       </div>
     </section>
 
-    <!-- Usage Section -->
-    <section id="usage" class="section">
-      <div class="section-card">
-        <h2>How to Use</h2>
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" x2="12" y1="15" y2="3" />
-              </svg>
-            </div>
-            <h3>Install Extension</h3>
-            <p>Download and install FMHY SafeGuard from your browser's extension store or GitHub releases.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                <path d="M2 12h20" />
-              </svg>
-            </div>
-            <h3>Browse Securely</h3>
-            <p>Visit any website and the toolbar icon will automatically update to reflect the site's safety status.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-                <path d="M11 8v6" />
-                <path d="M8 11h6" />
-              </svg>
-            </div>
-            <h3>View Details</h3>
-            <p>Click the extension icon to open a popup with detailed site status information and options.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </div>
-            <h3>Customize Settings</h3>
-            <p>Access settings to customize themes, update frequency, and link highlighting preferences.</p>
-          </div>
-        </div>
+    <section id="support" class="support-section reveal" aria-labelledby="support-title">
+      <h2 id="support-title">See a bad classification?</h2>
+      <p>Report it, check the source, or help improve the project.</p>
+      <div>
+        <a class="button button-primary" href="https://github.com/fmhy/FMHY-SafeGuard/issues" target="_blank"
+          rel="noreferrer">Report an issue</a>
+        <a class="button button-secondary" href="https://github.com/fmhy/FMHY-SafeGuard/pulls" target="_blank"
+          rel="noreferrer">Contribute</a>
       </div>
     </section>
+  </main>
 
-    <!-- Support Section -->
-    <section id="support" class="section">
-      <div class="section-card">
-        <h2>Support & Contributions</h2>
-        <p>Need help or want to contribute? We'd love to hear from you!</p>
-        <div class="hero-buttons">
-          <a href="https://github.com/fmhy/FMHY-SafeGuard/issues" class="btn btn-primary" target="_blank">Report
-            Issues</a>
-          <a href="https://github.com/fmhy/FMHY-SafeGuard/pulls" class="btn btn-secondary"
-            target="_blank">Contribute</a>
-          <a href="https://github.com/fmhy/FMHY/wiki/FMHY-Discord" class="btn btn-secondary" target="_blank">Join
-            Discord</a>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Footer -->
   <footer class="footer">
-    <p>FMHY SafeGuard - Powered by <a href="https://github.com/fmhy/FMHYFilterlist" target="_blank">FMHY Filterlist</a>
-    </p>
-    <p>Created by <a href="https://fmhy.net" target="_blank">FMHY</a> • <a href="https://github.com/fmhy/FMHY-SafeGuard"
-        target="_blank">Open Source</a></p>
+    <a class="brand" href="#main-content"><img src="../assets/logo.png" alt="" width="26" height="26" /><span>FMHY SafeGuard</span></a>
+    <p>Powered by the <a href="https://github.com/fmhy/FMHYFilterlist" target="_blank" rel="noreferrer">FMHY Filterlist</a>.</p>
+    <a href="https://fmhy.net" target="_blank" rel="noreferrer">FMHY.net</a>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=5"></script>
 </body>
 
 </html>
