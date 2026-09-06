@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### **🔧 Enhancements**
+- Updated GitHub Actions to `actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`, `google-github-actions/auth@v3`, and `google-github-actions/setup-gcloud@v3`.
+- Explicitly disabled automatic package-manager caching in the check and release workflows to preserve existing behavior after the setup-node upgrade.
+
 ## v1.4.1 (09/06/2026)
 
 #### **🔧 Enhancements**
