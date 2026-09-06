@@ -2,6 +2,10 @@
 
 These folders contain complete unpacked builds of the current source.
 
+Regenerate them from the repository root with `npm run build:test`. Edit `src`
+and `platform` rather than the generated copies. Run `npm run verify` before
+loading a new build.
+
 ## Chrome / Chromium
 
 1. Open `chrome://extensions`.

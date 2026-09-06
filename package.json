@@ -1,0 +1,25 @@
+{
+  "name": "fmhy-safeguard",
+  "private": true,
+  "version": "1.4.1",
+  "description": "FMHY SafeGuard browser extension and documentation site",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node tools/check.mjs",
+    "build": "node tools/build.mjs",
+    "build:test": "node tools/build.mjs --test-builds",
+    "verify": "npm run lint && npm run check && npm test && npm run build",
+    "lint": "eslint src docs/script.js tests tools eslint.config.mjs",
+    "format": "prettier --write \"src/js/*.js\" \"src/pub/*.js\" \"tests/*.js\" \"tools/*.mjs\" \"docs/script.js\" \"*.mjs\""
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "jsdom": "^30.0.1",
+    "prettier": "^3.9.6"
+  }
+}

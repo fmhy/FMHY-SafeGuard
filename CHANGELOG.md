@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.4.1 (09/06/2026)
+
+#### **🔧 Enhancements**
+- Extracted 10 JavaScript modules for configuration, settings, resource matching, guide parsing, site metadata, fallback resources, catalogue updates, toolbar icons, link rendering, and shared page rendering.
+- Unified popup and toolbar classification through the catalogue module.
+- Moved 1,354 lines of page styles into four CSS files and removed the unused 340-line `notes-mapping.js` duplicate.
+- Centralized Chromium and Firefox builds and added lint, syntax, asset-reference, and behavior checks to the development workflow.
+- Reduced `src/js/background.js` from 1,945 to 258 lines (87%).
+- Reduced `src/js/content.js` from 669 to 375 lines (44%).
+- Reduced `src/pub/index.js` from 569 to 291 lines (49%).
+- Reduced `src/pub/settings-page.js` from 470 to 201 lines (57%).
+- Reduced `src/pub/warning-page.js` from 113 to 61 lines (46%).
+- Compared source line counts against commit `158116b`, including comments and blank lines but excluding trailing blank lines and generated builds. Reductions include code moved into shared modules, not just deleted code.
+- Verified all 70 behavior tests pass, covering both background entry points, catalogue updates, page rendering, settings, and dynamic content scripts.
+
+#### **⚡ Performance**
+- Concurrent refresh requests share one download operation; simultaneous requests for the same note share one fetch.
+- Duplicate navigation events skip repeated checks for the same tab and resource URL.
+- No controlled before-and-after runtime benchmark has been recorded; source line reductions do not measure package-size or speed improvements.
+
+#### **🐞 Bug Fixes**
+- Fixed Brave Search warning banners disappearing when result metadata classes change or metadata is absent; warnings fall back to placement beside the unsafe link ([#97](https://github.com/fmhy/FMHY-SafeGuard/issues/97)).
+- Kept Brave warning banners independent of safe and unsafe link highlighting, including when both highlight options are disabled.
+- Enabled Kagi search highlighting and unsafe-link warnings in both Chromium and Firefox manifests, including Kagi subdomains.
+- Refreshes replace lists, indexes, counts, and timestamps together. Failed downloads or storage writes preserve the previous snapshot.
+
 ## v1.4.0 (07/17/2026)
 
 #### **⚡ Performance**

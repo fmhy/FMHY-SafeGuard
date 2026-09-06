@@ -56,16 +56,18 @@ jobs:
           echo "number=$CHROME_VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
       - name: Build browser packages
         shell: bash
         run: |
           set -euo pipefail
           VERSION=${{ steps.version.outputs.number }}
-          mkdir -p dist/chromium dist/firefox
-          cp -R src/. dist/chromium/
-          cp -R src/. dist/firefox/
-          cp platform/chromium/manifest.json dist/chromium/manifest.json
-          cp platform/firefox/manifest.json dist/firefox/manifest.json
+          npm run verify
           (cd dist/chromium && zip -qr "../FMHY-SafeGuard_v${VERSION}.chromium.zip" .)
           (cd dist/firefox && zip -qr "../FMHY-SafeGuard_v${VERSION}.firefox.zip" .)
 

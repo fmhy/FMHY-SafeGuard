@@ -1,82 +1,13 @@
 // i18n helper for FMHY SafeGuard
 // This script handles internationalization for HTML pages
 
-(function() {
+(function () {
   const browserAPI = typeof browser !== "undefined" ? browser : chrome;
 
   // Cache for loaded translations
   let translations = {};
   let currentLanguage = "en";
-  const DEFAULT_ALLOWED_MARKUP = ["STRONG"];
-
-  function isSafeRemoteUrl(value) {
-    try {
-      const protocol = new URL(value).protocol;
-      return protocol === "https:" || protocol === "http:";
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function sanitizeMarkupNode(sourceNode, allowedTags) {
-    if (sourceNode.nodeType === 3) {
-      return document.createTextNode(sourceNode.textContent);
-    }
-
-    const fragment = document.createDocumentFragment();
-    if (sourceNode.nodeType !== 1) return fragment;
-
-    const tagName = sourceNode.tagName.toUpperCase();
-    const destination = allowedTags.has(tagName)
-      ? document.createElement(tagName.toLowerCase())
-      : fragment;
-
-    if (tagName === "A" && destination !== fragment) {
-      const href = sourceNode.getAttribute("href");
-      if (isSafeRemoteUrl(href)) {
-        destination.href = href;
-        destination.target = "_blank";
-        destination.rel = "noopener noreferrer";
-      } else {
-        for (const child of sourceNode.childNodes) {
-          fragment.append(sanitizeMarkupNode(child, allowedTags));
-        }
-        return fragment;
-      }
-    } else if (tagName === "IMG" && destination !== fragment) {
-      const src = sourceNode.getAttribute("src");
-      if (!isSafeRemoteUrl(src)) return fragment;
-      destination.src = src;
-      destination.alt = sourceNode.getAttribute("alt") || "";
-      destination.loading = "lazy";
-      destination.referrerPolicy = "no-referrer";
-    }
-
-    for (const child of sourceNode.childNodes) {
-      destination.append(sanitizeMarkupNode(child, allowedTags));
-    }
-
-    return destination;
-  }
-
-  function renderSanitizedMarkup(
-    container,
-    markup,
-    allowedTagNames = DEFAULT_ALLOWED_MARKUP
-  ) {
-    const parsedDocument = new DOMParser().parseFromString(
-      String(markup || ""),
-      "text/html"
-    );
-    const allowedTags = new Set(allowedTagNames);
-    const content = document.createDocumentFragment();
-
-    for (const child of parsedDocument.body.childNodes) {
-      content.append(sanitizeMarkupNode(child, allowedTags));
-    }
-
-    container.replaceChildren(content);
-  }
+  const { renderSanitizedMarkup } = SafeGuard.pageUi;
 
   // Supported languages
   const SUPPORTED_LANGUAGES = ["en", "es", "ru", "de", "pt", "fr", "ja"];
@@ -85,7 +16,11 @@
   async function getPreferredLanguage() {
     try {
       const { language } = await browserAPI.storage.local.get("language");
-      if (language && language !== "auto" && SUPPORTED_LANGUAGES.includes(language)) {
+      if (
+        language &&
+        language !== "auto" &&
+        SUPPORTED_LANGUAGES.includes(language)
+      ) {
         return language;
       }
     } catch (e) {
@@ -134,7 +69,9 @@
 
     // Handle substitutions (e.g., $DOMAIN$)
     if (substitutions) {
-      const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
+      const subs = Array.isArray(substitutions)
+        ? substitutions
+        : [substitutions];
       subs.forEach((sub, index) => {
         // Replace $1, $2, etc. and named placeholders
         message = message.replace(new RegExp(`\\$${index + 1}`, "g"), sub);
@@ -142,7 +79,10 @@
           Object.keys(entry.placeholders).forEach((name) => {
             const placeholder = entry.placeholders[name];
             if (placeholder.content === `$${index + 1}`) {
-              message = message.replace(new RegExp(`\\$${name.toUpperCase()}\\$`, "g"), sub);
+              message = message.replace(
+                new RegExp(`\\$${name.toUpperCase()}\\$`, "g"),
+                sub,
+              );
             }
           });
         }
@@ -203,7 +143,9 @@
 
   // Promise that resolves when i18n is ready
   let readyResolve;
-  const readyPromise = new Promise(resolve => { readyResolve = resolve; });
+  const readyPromise = new Promise((resolve) => {
+    readyResolve = resolve;
+  });
 
   // Initialize i18n system
   async function init() {
@@ -229,11 +171,13 @@
     getMessage: getMessageFromTranslations,
     applyTranslations: applyTranslations,
     renderSanitizedMarkup,
-    setLanguage: async function(lang) {
+    setLanguage: async function (lang) {
       if (SUPPORTED_LANGUAGES.includes(lang) || lang === "auto") {
         if (lang === "auto") {
           const browserLang = browserAPI.i18n.getUILanguage().split("-")[0];
-          currentLanguage = SUPPORTED_LANGUAGES.includes(browserLang) ? browserLang : "en";
+          currentLanguage = SUPPORTED_LANGUAGES.includes(browserLang)
+            ? browserLang
+            : "en";
         } else {
           currentLanguage = lang;
         }
@@ -241,9 +185,9 @@
         applyTranslations();
       }
     },
-    getCurrentLanguage: function() {
+    getCurrentLanguage: function () {
       return currentLanguage;
     },
-    ready: readyPromise
+    ready: readyPromise,
   };
 })();

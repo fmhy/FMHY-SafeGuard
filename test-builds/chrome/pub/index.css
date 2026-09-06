@@ -1,0 +1,428 @@
+@font-face {
+  font-family: "Inter";
+  src: url("../res/fonts/inter.woff2") format("woff2");
+}
+
+:root {
+  --background-color: rgb(26, 26, 26);
+  --text-color: #848a94;
+  --text-color-light: #e8e8e8;
+  --accent-color: #c4b5fd;
+  --link-color: #78b3e2;
+  --hover-bg: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] {
+  --background-color: #f5f5f5;
+  --text-color: #4b5563;
+  --text-color-light: #1a1a1a;
+  --accent-color: #6c63ff;
+  --link-color: #0366d6;
+  --hover-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="amoled"] {
+  --background-color: #000000;
+  --text-color: #848a94;
+  --text-color-light: #e8e8e8;
+  --accent-color: #c4b5fd;
+  --link-color: #78b3e2;
+  --hover-bg: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  text-align: center;
+  background-color: var(--background-color);
+  font-family: "Inter", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  color: var(--text-color);
+  margin: 0;
+  padding: 10px;
+  min-width: 300px;
+  max-width: 320px;
+  /* Limit the width to make it more compact */
+  position: relative;
+  /* For absolute positioning of settings button */
+}
+
+.header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  padding-right: 25px;
+}
+
+.title h1 {
+  font-size: 24px;
+  background: -webkit-linear-gradient(120deg,
+      var(--accent-color) 30%,
+      var(--link-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  padding: 10px;
+}
+
+/* Settings Button */
+.settings-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-button:hover {
+  background: var(--hover-bg);
+}
+
+.settings-button svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.settings-button:hover svg {
+  transform: rotate(45deg);
+}
+
+.settings-button path {
+  fill: var(--text-color);
+  transition: fill 0.3s ease;
+}
+
+.settings-button:hover path {
+  fill: var(--accent-color);
+}
+
+#status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.status-image {
+  width: 60px;
+  /* Reduced icon size */
+  height: 60px;
+  transition: transform 0.3s ease;
+}
+
+#status-message {
+  font-size: 14px;
+  /* Smaller text for compact design */
+  margin-top: 10px;
+  color: var(--text-color-light);
+  line-height: 1.3;
+  padding: 0 10px;
+}
+
+#status-message strong {
+  color: var(--accent-color);
+}
+
+#fmhy-resource-link {
+  display: none;
+  margin-top: 2px;
+  color: var(--link-color);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#fmhy-resource-link.visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#fmhy-resource-link:hover {
+  text-decoration: underline;
+}
+
+#error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+#footer {
+  font-size: 11px;
+  /* Smaller footer text */
+  margin-top: 10px;
+  color: var(--text-color);
+}
+
+#footer a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+#footer a:hover {
+  text-decoration: underline;
+}
+
+#feedback {
+  font-size: 12px;
+  margin-top: 10px;
+  color: var(--text-color);
+}
+
+#feedback a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+#feedback a:hover {
+  text-decoration: underline;
+}
+
+/* Animation for status change */
+.status-image.active {
+  transform: scale(1.1);
+}
+
+/* Password Section Styles */
+#password-container {
+  margin-top: 15px;
+  padding: 10px;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  text-align: left;
+  display: none;
+}
+
+#password-container.visible {
+  display: block;
+}
+
+#password-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4ecdc4;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#password-title svg {
+  stroke: #4ecdc4;
+}
+
+#password-content {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--text-color);
+  background: var(--bg-color);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#password-content:hover {
+  background: var(--hover-bg);
+}
+
+#password-content .copy-icon {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+#password-content:hover .copy-icon {
+  opacity: 1;
+}
+
+#password-content.copied {
+  background: #4ecdc4;
+  color: #000;
+}
+
+/* Invite Code Section Styles */
+#invite-code-container {
+  margin-top: 15px;
+  padding: 10px;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  text-align: left;
+  display: none;
+}
+
+#invite-code-container.visible {
+  display: block;
+}
+
+#invite-code-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f59e0b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#invite-code-title svg {
+  stroke: #f59e0b;
+}
+
+#invite-code-content {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--text-color);
+  background: var(--bg-color);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#invite-code-content:hover {
+  background: var(--hover-bg);
+}
+
+#invite-code-content .copy-icon {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+#invite-code-content:hover .copy-icon {
+  opacity: 1;
+}
+
+#invite-code-content.copied {
+  background: #f59e0b;
+  color: #000;
+}
+
+/* Reason Section Styles */
+#reason-container {
+  margin-top: 15px;
+  padding: 10px;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  text-align: left;
+  display: none;
+}
+
+#reason-container.visible {
+  display: block;
+}
+
+#reason-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff6b6b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#reason-title svg {
+  stroke: #ff6b6b;
+}
+
+#reason-content {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-color-light);
+}
+
+#reason-content a {
+  color: #ff6b6b;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+#reason-content a:hover {
+  text-decoration: underline;
+}
+
+/* Note Section Styles */
+#note-container {
+  margin-top: 15px;
+  padding: 10px;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  text-align: left;
+  display: none;
+}
+
+#note-container.visible {
+  display: block;
+}
+
+#note-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#note-content {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-color-light);
+}
+
+#note-content h4 {
+  font-size: 13px;
+  margin: 0 0 8px 0;
+  color: var(--accent-color);
+}
+
+#note-content ul {
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+#note-content li {
+  margin: 3px 0;
+}
+
+#note-content a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+#note-content a:hover {
+  text-decoration: underline;
+}
+
+#note-content code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+#note-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 8px 0;
+}

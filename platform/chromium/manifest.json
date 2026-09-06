@@ -3,7 +3,7 @@
     "name": "__MSG_extensionName__",
     "default_locale": "en",
     "author": "Kenneth Hendricks & contributors",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "icons": {
         "128": "res/ext_icon_144.png"
     },
@@ -40,6 +40,7 @@
                 "*://*.google.cn/*",
                 "*://*.bing.com/*",
                 "*://*.duckduckgo.com/*",
+                "*://*.kagi.com/*",
                 "*://*.librey.org/*",
                 "*://*.4get.ca/*",
                 "*://*.mojeek.com/*",
@@ -76,13 +77,20 @@
                 "*://*.seznam.cz/*"
             ],
             "js": [
+                "js/config.js",
+                "js/settings.js",
+                "js/link-renderer.js",
                 "js/content.js"
             ],
             "run_at": "document_idle"
         },
         {
-            "matches": ["https://fmhy.net/*"],
-            "js": ["js/fmhy-highlight.js"],
+            "matches": [
+                "https://fmhy.net/*"
+            ],
+            "js": [
+                "js/fmhy-highlight.js"
+            ],
             "run_at": "document_idle"
         }
     ],

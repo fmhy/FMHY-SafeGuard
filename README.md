@@ -82,6 +82,8 @@ To start using FMHY SafeGuard, follow these steps:
 
 For questions or support, feel free to open an issue on [GitHub](https://github.com/fmhy/FMHY-SafeGuard/issues). If you'd like to contribute, check out our contribution guidelines.
 
+For local setup, testing, builds, and the code layout, see [Development](CONTRIBUTING.md).
+
 # 🌐 Quick Links
 - [Download the Extension](https://github.com/fmhy/FMHY-SafeGuard/releases)
 - [Contribute on GitHub](https://github.com/fmhy/FMHY-SafeGuard/pulls)

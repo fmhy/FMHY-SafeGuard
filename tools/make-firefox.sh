@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-
-set -e
-
-# Define build destination
-DES=dist/build/FMHY-SafeGuard.firefox
-rm -rf $DES
-mkdir -p $DES
-
-# Copy files specific to Firefox extension
-cp -R platform/firefox/* $DES/
-
-# Create a versioned XPI package
-pushd dist/build
-zip -r FMHY-SafeGuard_"$1".firefox.xpi FMHY-SafeGuard.firefox
-popd
+set -euo pipefail
+cd "$(dirname "$0")/.."
+node tools/build.mjs
+VERSION=$(node -p "require('./platform/firefox/manifest.json').version")
+if [[ -n "${1:-}" && "${1#v}" != "$VERSION" ]]; then
+  echo "Requested version does not match manifest version $VERSION" >&2
+  exit 1
+fi
+(cd dist/firefox && zip -qr "../FMHY-SafeGuard_v${VERSION}.firefox.xpi" .)

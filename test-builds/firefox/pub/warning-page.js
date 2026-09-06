@@ -1,113 +1,61 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Cross-browser compatibility shim
+  "use strict";
   const browserAPI = typeof browser !== "undefined" ? browser : chrome;
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const unsafeUrl = decodeURIComponent(urlParams.get("url") || "unknown site");
-  const reasonFromUrl = urlParams.get("reason");
+  const { renderTextWithLinks } = SafeGuard.pageUi;
+  const params = new URLSearchParams(window.location.search);
+  // URLSearchParams already decodes query values. A second decode corrupts literal percent signs.
+  const unsafeUrl = params.get("url") || "unknown site";
+  const reasonText = document.getElementById("reasonText");
+  const reasonContainer = document.getElementById("reasonContainer");
+  const proceed = document.getElementById("proceed");
   document.getElementById("unsafeUrl").textContent = unsafeUrl;
-  console.log(`Warning page loaded for URL: ${unsafeUrl}`);
 
-  // Display reason for unsafe site - prefer URL parameter, fallback to storage
-  let reason = reasonFromUrl ? decodeURIComponent(reasonFromUrl) : null;
-
-  function renderTextWithLinks(container, text) {
-    container.replaceChildren();
-    const urlRegex = /https?:\/\/[^\s]+/g;
-    let lastIndex = 0;
-
-    for (const match of text.matchAll(urlRegex)) {
-      container.append(document.createTextNode(text.slice(lastIndex, match.index)));
-      const url = match[0];
-      const link = document.createElement("a");
-      link.href = url;
-      link.textContent = url;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      container.append(link);
-      lastIndex = match.index + url.length;
-    }
-
-    container.append(document.createTextNode(text.slice(lastIndex)));
+  function showReason(reason) {
+    if (!reason) return;
+    renderTextWithLinks(reasonText, reason);
+    reasonContainer.style.display = "block";
   }
 
-  if (reason) {
-    console.log("Reason provided via URL parameter");
-    renderTextWithLinks(document.getElementById("reasonText"), reason);
-    document.getElementById("reasonContainer").style.display = "block";
-  } else {
-    // Fallback: try to fetch from storage
+  showReason(params.get("reason"));
+  document
+    .getElementById("goBack")
+    .addEventListener("click", () => window.history.go(-2));
+  proceed.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to proceed? This site may be unsafe."))
+      return;
+    proceed.disabled = true;
     try {
-      const { unsafeReasons } = await browserAPI.storage.local.get("unsafeReasons");
-      console.log("Loaded unsafeReasons:", unsafeReasons ? Object.keys(unsafeReasons).length + " entries" : "null");
-
-      if (unsafeReasons && Object.keys(unsafeReasons).length > 0) {
-        // Extract domain from the unsafe URL
-        let domain;
-        try {
-          const urlObj = new URL(unsafeUrl);
-          domain = urlObj.hostname.replace(/^www\./, "").toLowerCase();
-        } catch (e) {
-          // If URL parsing fails, try to extract domain directly
-          domain = unsafeUrl
-            .replace(/^https?:\/\//, "")
-            .replace(/^www\./, "")
-            .split("/")[0]
-            .toLowerCase();
-        }
-
-        console.log("Looking up reason for domain:", domain);
-
-        // Check for reason - try multiple variations
-        reason = unsafeReasons[domain] ||
-          unsafeReasons["www." + domain] ||
-          unsafeReasons[domain.replace(/\/$/, "")]; // Without trailing slash
-
-        console.log("Found reason:", reason ? "yes" : "no");
-
-        if (reason) {
-          renderTextWithLinks(document.getElementById("reasonText"), reason);
-          document.getElementById("reasonContainer").style.display = "block";
-        }
-      } else {
-        console.log("No unsafeReasons in storage - filter lists may need to be refreshed");
-      }
-    } catch (error) {
-      console.error("Error fetching reason:", error);
-    }
-  }
-
-  // "Go Back" button functionality to return to the previous page
-  document.getElementById("goBack").addEventListener("click", () => {
-    console.log("User clicked Go Back.");
-    // Go back twice to skip over the warning page
-    window.history.go(-2);
-  });
-
-  // "Proceed" button functionality to continue to the unsafe URL
-  document.getElementById("proceed").addEventListener("click", async () => {
-    if (confirm("Are you sure you want to proceed? This site may be unsafe.")) {
-      const [currentTab] = await browserAPI.tabs.query({
+      const [tab] = await browserAPI.tabs.query({
         active: true,
         currentWindow: true,
       });
-
-      if (currentTab && currentTab.id) {
-        console.log(
-          `Sending approveSite message for tab ${currentTab.id} and URL ${unsafeUrl}`
-        );
-
-        // Send approval message to the background script
-        await browserAPI.runtime.sendMessage({
-          action: "approveSite",
-          tabId: currentTab.id,
-          url: unsafeUrl,
-        });
-
-        console.log("Approval stored, navigating to the unsafe URL...");
-        // Redirect to the approved unsafe URL
-        await browserAPI.tabs.update(currentTab.id, { url: unsafeUrl });
-      }
+      if (!Number.isInteger(tab?.id))
+        throw new Error("The current tab is unavailable");
+      const response = await browserAPI.runtime.sendMessage({
+        action: "approveSite",
+        tabId: tab.id,
+        url: unsafeUrl,
+      });
+      if (response?.status !== "approved")
+        throw new Error(response?.error || "Approval failed");
+      await browserAPI.tabs.update(tab.id, { url: unsafeUrl });
+    } catch (error) {
+      console.error("Unable to proceed to site:", error);
+      showReason("Unable to open this site. Please try again.");
+    } finally {
+      proceed.disabled = false;
     }
   });
+
+  if (!params.get("reason")) {
+    try {
+      const response = await browserAPI.runtime.sendMessage({
+        action: "getSiteStatus",
+        url: unsafeUrl,
+      });
+      showReason(response?.reason);
+    } catch (error) {
+      console.error("Unable to load unsafe-site reason:", error);
+    }
+  }
 });
