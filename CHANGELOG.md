@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## v1.4.2 (09/09/2026)
+
+#### **🐞 Bug Fixes**
+- Fixed toolbar icons failing to change in Chromium browsers after v1.4.1. Icon URLs now resolve from the extension root instead of the background worker's `js/` directory ([#98](https://github.com/fmhy/FMHY-SafeGuard/issues/98)).
+- Added regression tests that resolve every toolbar icon against the actual background entry point and check that its image exists.
+
+#### Validation
+- All 72 automated tests, lint, source checks, and both extension builds pass.
+- Tested all seven toolbar statuses and navigation between starred and unlisted sites in Microsoft Edge 152 and Firefox 147. Confirmed Firefox's pinned toolbar displays the corresponding star and neutral icons.
 
 #### **🔧 Enhancements**
 - Updated GitHub Actions to `actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`, `actions/download-artifact@v8`, `google-github-actions/auth@v3`, and `google-github-actions/setup-gcloud@v3`.

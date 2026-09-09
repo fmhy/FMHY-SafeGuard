@@ -29,6 +29,18 @@ async function start(
   const load = (file) =>
     vm.runInContext(read(`src/${file}`), context, { filename: file });
   const manifest = JSON.parse(read(`platform/${platform}/manifest.json`));
+  const backgroundUrl = browser.api.runtime.getURL(
+    manifest.background.service_worker || "_generated_background_page.html",
+  );
+  const setIcon = browser.api.action.setIcon;
+  browser.api.action.setIcon = async (details) => {
+    // Chromium resolves icon paths relative to the worker, which lives in js/.
+    for (const iconPath of Object.values(details.path)) {
+      const iconUrl = new URL(iconPath, backgroundUrl);
+      read(`src${iconUrl.pathname}`);
+    }
+    return setIcon(details);
+  };
   if (platform === "chromium") {
     context.importScripts = (...files) =>
       files.forEach((file) => load(`js/${file}`));
@@ -53,6 +65,23 @@ async function start(
 }
 
 for (const platform of ["chromium", "firefox"]) {
+  test(`${platform} loads packaged toolbar icons for every site status`, async () => {
+    const env = await start(platform);
+    for (const [url, icon] of [
+      ["https://starred.example", "starred_19.png"],
+      ["https://safe.example/docs", "safe_19.png"],
+      ["https://unsafe.example", "unsafe_19.png"],
+      ["https://caution.example", "potentially_unsafe_19.png"],
+      ["https://fmhy.net", "fmhy_19.png"],
+      [env.api.runtime.getURL("pub/index.html"), "ext_icon_144.png"],
+      ["https://unknown.example", "default_19.png"],
+    ]) {
+      await env.navigate(url);
+      assert.deepEqual(env.errors, [], `Icon update failed for ${url}`);
+      assert.ok(env.icons.at(-1).path[19].endsWith(`/${icon}`));
+    }
+  });
+
   test(`${platform} loads its actual background entry and shares popup and toolbar classification`, async () => {
     const env = await start(platform);
     assert.equal(env.api.runtime.onMessage.listeners.length, 1);

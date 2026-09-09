@@ -1,7 +1,7 @@
 {
   "name": "fmhy-safeguard",
   "private": true,
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "FMHY SafeGuard browser extension and documentation site",
   "scripts": {
     "test": "node --test tests/*.test.js",

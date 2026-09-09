@@ -37,7 +37,13 @@ SafeGuard.updatePageAction = (() => {
 
     return browserAPI.action.setIcon({
       tabId: tabId,
-      path: icon,
+      // Worker-relative paths point into js/ on Chromium.
+      path: Object.fromEntries(
+        Object.entries(icon).map(([size, path]) => [
+          size,
+          browserAPI.runtime.getURL(path),
+        ]),
+      ),
     });
   }
 
