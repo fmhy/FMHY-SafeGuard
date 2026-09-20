@@ -1,24 +1,24 @@
 # Changelog
 
-## Unreleased
+## v1.4.3 (09/19/2026)
 
 #### **🐞 Bug Fixes**
 
-- Fixed repeated unsafe-site warnings after clicking "Proceed Anyway" when visiting other paths on the same ordinary website, including changes to query strings and fragments ([#100](https://github.com/fmhy/FMHY-SafeGuard/issues/100)).
-- Approvals stay within the current tab, survive background-worker restarts for multiple approved websites, and expire when the tab closes.
-- Kept approvals on shared hosts limited to the repository, script, or exact resource URL. Approving one GitHub repository does not suppress warnings for another.
-- Proceeding replaces the warning page in browser history so Back does not reopen it.
-- Restored Firefox for Android declarations in the manifest and AMO submission metadata so uploads include desktop and Android compatibility ([#99](https://github.com/fmhy/FMHY-SafeGuard/issues/99)). Firefox settings now use `options_ui` to support the declared minimum versions: desktop 109 and Android 120.
+- Fixed repeated warnings after clicking "Proceed Anyway" on an unsafe website. Other pages on the same website now stay approved in that tab, including changes to query strings and fragments. [#100](https://github.com/fmhy/FMHY-SafeGuard/issues/100).
+- Approvals survive background restarts and expire when the tab closes.
+- Shared hosts keep separate approvals for each repository, script, or exact resource URL. Approving one GitHub repository does not suppress warnings for another.
+- The Back button no longer reopens the warning page after proceeding.
+- Restored Firefox for Android declarations in the manifest and AMO uploads. Updated Firefox's settings registration to support desktop Firefox 109+ and Android Firefox 120+. [#99](https://github.com/fmhy/FMHY-SafeGuard/issues/99).
 
 #### **🔧 Enhancements**
 
-- Added Mozilla compatibility checks in CI and immediately before Firefox store submission. Uploads stop on linter errors, compatibility warnings, or missing Android declarations.
+- Added Mozilla compatibility checks to CI and Firefox uploads. Uploads stop if the checks report errors, incompatibilities, or missing Android declarations.
 
 #### **✅ Validation**
 
 - All 104 automated tests, lint, source checks, and both browser builds pass.
-- Passed Mozilla's compatibility lint for Firefox desktop 109+ and Android 120+. Regression tests cover missing Android declarations, unsupported API/version warnings, and background startup without Android's unavailable context-menu API. Android device testing remains separate.
-- Passed 10 browser checks in Chrome for Testing 153 and 9 in Firefox 147 using isolated profiles. Covered page navigation, Back, separate tabs, multiple approved websites, tab-close cleanup, and repository boundaries on GitHub. Chrome also passed a real service-worker restart check.
+- Passed Mozilla's compatibility lint for desktop Firefox 109+ and Android Firefox 120+. Tests cover missing Android declarations, compatibility warnings, and startup when the context-menu API is unavailable. Android device testing has not been performed.
+- Passed 10 browser checks in Chrome for Testing 153 and 9 in Firefox 147 using isolated profiles. Covered navigation, Back, separate tabs, multiple approved websites, tab closure, and GitHub repository boundaries. The Chrome checks include a service-worker restart.
 
 ## v1.4.2 (09/09/2026)
 
