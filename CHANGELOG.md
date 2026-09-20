@@ -2,16 +2,19 @@
 
 ## Unreleased
 
-#### Bug fixes
+#### **🐞 Bug Fixes**
 
 - Fixed repeated unsafe-site warnings after clicking "Proceed Anyway" when visiting other paths on the same ordinary website, including changes to query strings and fragments ([#100](https://github.com/fmhy/FMHY-SafeGuard/issues/100)).
 - Approvals stay within the current tab, survive background-worker restarts for multiple approved websites, and expire when the tab closes.
 - Kept approvals on shared hosts limited to the repository, script, or exact resource URL. Approving one GitHub repository does not suppress warnings for another.
 - Proceeding replaces the warning page in browser history so Back does not reopen it.
 - Restored Firefox for Android declarations in the manifest and AMO submission metadata so uploads include desktop and Android compatibility ([#99](https://github.com/fmhy/FMHY-SafeGuard/issues/99)). Firefox settings now use `options_ui` to support the declared minimum versions: desktop 109 and Android 120.
+
+#### **🔧 Enhancements**
+
 - Added Mozilla compatibility checks in CI and immediately before Firefox store submission. Uploads stop on linter errors, compatibility warnings, or missing Android declarations.
 
-#### Validation
+#### **✅ Validation**
 
 - All 104 automated tests, lint, source checks, and both browser builds pass.
 - Passed Mozilla's compatibility lint for Firefox desktop 109+ and Android 120+. Regression tests cover missing Android declarations, unsupported API/version warnings, and background startup without Android's unavailable context-menu API. Android device testing remains separate.
@@ -23,7 +26,8 @@
 - Fixed toolbar icons failing to change in Chromium browsers after v1.4.1. Icon URLs now resolve from the extension root instead of the background worker's `js/` directory ([#98](https://github.com/fmhy/FMHY-SafeGuard/issues/98)).
 - Added regression tests that resolve every toolbar icon against the actual background entry point and check that its image exists.
 
-#### Validation
+#### **✅ Validation**
+
 - All 72 automated tests, lint, source checks, and both extension builds pass.
 - Tested all seven toolbar statuses and navigation between starred and unlisted sites in Microsoft Edge 152 and Firefox 147. Confirmed Firefox's pinned toolbar displays the corresponding star and neutral icons.
 
