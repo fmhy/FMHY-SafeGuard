@@ -16,11 +16,11 @@ if (typeof importScripts === "function") {
   "use strict";
   const browserAPI = typeof browser !== "undefined" ? browser : chrome;
   const storage = browserAPI.storage.local;
-  const { normalizeResourceUrl } = SafeGuard.resources;
+  const { normalizeResourceUrl, isSharedResourceHost, getApprovalKey } =
+    SafeGuard.resources;
   const { updatePageAction } = SafeGuard;
   const checkedTabUrls = new Map();
   const navigationVersions = new Map();
-  const approvedUrls = new Map();
   const contextMenuId = "open-fmhy-net";
   const catalogue = SafeGuard.createCatalogue({
     storage,
@@ -119,6 +119,24 @@ if (typeof importScripts === "function") {
     return catalogue.getSiteStatus(url);
   }
 
+  async function readApprovedSites(tabId) {
+    const key = `proceedTab_${tabId}`;
+    const stored = (await storage.get(key))[key];
+    // Previous versions stored one full URL; the first local fix stored hosts.
+    const entries = Array.isArray(stored) ? stored : [stored];
+    return new Set(
+      entries
+        .filter(
+          (entry) =>
+            typeof entry === "string" &&
+            // A hostname-only approval cannot identify a resource on a shared host.
+            (/^https?:\/\//i.test(entry) || !isSharedResourceHost(entry)),
+        )
+        .map(getApprovalKey)
+        .filter(Boolean),
+    );
+  }
+
   async function checkTab(tabId, url) {
     const identity = /^https?:\/\//i.test(url)
       ? normalizeResourceUrl(url)
@@ -137,13 +155,8 @@ if (typeof importScripts === "function") {
         return;
       await updatePageAction(result.status, tabId);
       if (result.status !== "unsafe" || !showWarning) return;
-      const approvalKey = `proceedTab_${tabId}`;
-      const stored = await storage.get(approvalKey);
-      if (
-        approvedUrls.get(tabId)?.has(identity) ||
-        stored[approvalKey] === identity
-      )
-        return;
+      const approved = await readApprovedSites(tabId);
+      if (approved.has(getApprovalKey(identity))) return;
       const latestTab = await browserAPI.tabs.get(tabId);
       if (navigationVersions.get(tabId) !== version || latestTab.url !== url)
         return;
@@ -194,12 +207,11 @@ if (typeof importScripts === "function") {
       ) {
         throw new Error("Invalid site approval");
       }
-      const identity = normalizeResourceUrl(url);
+      const identity = getApprovalKey(url);
       if (!identity) throw new Error("Invalid site approval URL");
-      const approved = approvedUrls.get(tabId) || new Set();
+      const approved = await readApprovedSites(tabId);
       approved.add(identity);
-      approvedUrls.set(tabId, approved);
-      await storage.set({ [`proceedTab_${tabId}`]: identity });
+      await storage.set({ [`proceedTab_${tabId}`]: [...approved] });
       await updatePageAction("unsafe", tabId);
       return { status: "approved" };
     },
@@ -229,7 +241,6 @@ if (typeof importScripts === "function") {
       .catch(reportError);
   });
   browserAPI.tabs.onRemoved.addListener((tabId) => {
-    approvedUrls.delete(tabId);
     checkedTabUrls.delete(tabId);
     navigationVersions.delete(tabId);
     storage.remove(`proceedTab_${tabId}`).catch(reportError);

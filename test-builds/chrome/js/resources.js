@@ -70,6 +70,45 @@ SafeGuard.resources = (() => {
     return false;
   }
 
+  function getApprovalKey(url) {
+    const normalized = normalizeResourceUrl(url);
+    if (!normalized) return null;
+    const parsed = new URL(normalized);
+    if (!isSharedResourceHost(parsed.hostname)) return parsed.hostname;
+
+    // Only collapse paths where the platform's resource boundary is known.
+    // Other shared hosts keep the full URL, including query and fragment IDs.
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    let resourcePath;
+    if (
+      [
+        "github.com",
+        "gist.github.com",
+        "raw.githubusercontent.com",
+        "codeberg.org",
+      ].includes(parsed.hostname) &&
+      parts.length >= 2
+    ) {
+      resourcePath = parts.slice(0, 2).join("/");
+    } else if (parsed.hostname === "gitlab.com") {
+      // GitLab projects may be nested in arbitrarily many subgroups.
+      const separator = parts.indexOf("-");
+      if (separator >= 2) resourcePath = parts.slice(0, separator).join("/");
+    } else if (
+      parsed.hostname === "sourceforge.net" &&
+      ["projects", "p"].includes(parts[0]) &&
+      parts.length >= 2
+    ) {
+      resourcePath = parts.slice(0, 2).join("/");
+    } else if (parsed.hostname === "greasyfork.org") {
+      const script = parsed.pathname.match(
+        /^\/(?:[^/]+\/)?scripts\/(\d+)(?:-[^/]*)?(?:\/|$)/,
+      );
+      if (script) resourcePath = `scripts/${script[1]}`;
+    }
+    return resourcePath ? `${parsed.origin}/${resourcePath}` : normalized;
+  }
+
   function urlMatchesListedResource(currentUrl, listedUrl) {
     const normalizedCurrent = normalizeResourceUrl(currentUrl);
     const normalizedListed = normalizeResourceUrl(listedUrl);
@@ -316,6 +355,7 @@ SafeGuard.resources = (() => {
     normalizeUrl,
     normalizeResourceUrl,
     isSharedResourceHost,
+    getApprovalKey,
     urlMatchesListedResource,
     buildResourceIndex,
     findMatchingListedResource,

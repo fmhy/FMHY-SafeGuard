@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const vm = require("node:vm");
 const {
   createDom,
   createBrowser,
@@ -139,6 +140,61 @@ test("warning pages preserve percent escapes and render reasons as text", async 
     "noopener noreferrer",
   );
 });
+
+for (const status of ["approved", "error"]) {
+  test(`warning page waits for approval and only replaces history when ${status}`, async (t) => {
+    const browser = createBrowser();
+    const unsafeUrl = "https://unsafe.example/path%25name?q=a%2Fb";
+    const query = `?${new URLSearchParams({ url: unsafeUrl, reason: "Malware" })}`;
+    const env = createDom(read("src/pub/warning-page.html"));
+    t.after(() => env.window.close());
+    await settle();
+    env.load("src/js/page-ui.js");
+    const replacements = [];
+    const requests = [];
+    let respond;
+    browser.api.runtime.sendMessage = (message) => {
+      requests.push(message);
+      return new Promise((resolve) => {
+        respond = resolve;
+      });
+    };
+    // jsdom does not implement navigation. Run the real controller with a
+    // replace adapter and the actual page DOM to check the history operation.
+    vm.runInNewContext(read("src/pub/warning-page.js"), {
+      document: env.document,
+      window: {
+        location: { search: query, replace: (url) => replacements.push(url) },
+      },
+      chrome: browser.api,
+      SafeGuard: env.window.SafeGuard,
+      URLSearchParams,
+      confirm: () => true,
+      console: { error() {} },
+    });
+    env.document.dispatchEvent(new env.window.Event("DOMContentLoaded"));
+    const proceed = env.document.getElementById("proceed");
+    proceed.click();
+    await settle();
+    assert.equal(proceed.disabled, true);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].action, "approveSite");
+    assert.equal(requests[0].tabId, 1);
+    assert.equal(requests[0].url, unsafeUrl);
+    assert.deepEqual(replacements, []);
+    respond({ status });
+    await settle();
+    assert.deepEqual(replacements, status === "approved" ? [unsafeUrl] : []);
+    assert.equal(browser.navigations.length, 0);
+    assert.equal(proceed.disabled, false);
+    if (status === "error") {
+      assert.match(
+        env.document.getElementById("reasonText").textContent,
+        /Please try again/,
+      );
+    }
+  });
+}
 
 test("welcome page loads its shared rendering and translation dependencies", async (t) => {
   const env = await page("welcome-page");

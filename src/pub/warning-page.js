@@ -38,7 +38,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
       if (response?.status !== "approved")
         throw new Error(response?.error || "Approval failed");
-      await browserAPI.tabs.update(tab.id, { url: unsafeUrl });
+      // Keep this interstitial out of history when the user navigates back.
+      window.location.replace(unsafeUrl);
     } catch (error) {
       console.error("Unable to proceed to site:", error);
       showReason("Unable to open this site. Please try again.");

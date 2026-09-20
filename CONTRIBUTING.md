@@ -39,7 +39,7 @@ Modules expose their interfaces through `globalThis.SafeGuard`. Their internal v
 
 Refreshes download all sources and compile a replacement snapshot before writing storage. Concurrent refreshes share the same promise. A failed download or storage write keeps the previous snapshot and timestamp. Startup loads cached data before attempting a refresh, so an offline start retains the last usable classifications. Scheduled refreshes update both unsafe lists and resource guides.
 
-Settings saves do not change `lastUpdated`. That timestamp records a completed catalogue refresh. Warning-page approvals are scoped to a tab and normalized resource URL, survive worker suspension, and are removed when the tab closes.
+Settings saves do not change `lastUpdated`. That timestamp records a completed catalogue refresh. Warning-page approvals cover every path, query string and fragment on an ordinary website's hostname in that tab. Hostnames ignore a leading `www.`; other subdomains and tabs require their own approval. Shared hosts use resource-specific approvals: known repository and script URL patterns cover that repository or script, while other shared URLs retain their full path, query and fragment. Hostname-only approvals for shared hosts from older local builds are discarded. All approvals survive worker suspension and are removed when the tab closes. Proceeding replaces the warning page in history so the back button does not reopen it.
 
 ## Tests
 

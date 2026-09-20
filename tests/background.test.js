@@ -56,9 +56,13 @@ async function start(
       );
       if (!handled) reject(new Error("Unhandled message"));
     });
-  const navigate = async (url) => {
-    browser.tabs.set(1, { id: 1, url });
-    await browser.api.tabs.onUpdated.emit(1, { url }, browser.tabs.get(1));
+  const navigate = async (url, tabId = 1) => {
+    browser.tabs.set(tabId, { id: tabId, url });
+    await browser.api.tabs.onUpdated.emit(
+      tabId,
+      { url },
+      browser.tabs.get(tabId),
+    );
     await settle();
   };
   return { ...browser, context, request, navigate, errors };
@@ -123,27 +127,248 @@ test("duplicate navigation events do not repeat work or inherit source-site stat
   assert.match(env.icons.at(-1).path[19], /default_19.png$/);
 });
 
-test("an explicit approval survives worker restart and remains limited to its tab and URL", async () => {
-  const storage = memoryStorage(cachedData());
-  const first = await start("chromium", createBrowser(storage));
-  assert.equal(
-    (
-      await first.request({
-        action: "approveSite",
-        tabId: 1,
-        url: "https://unsafe.example/approved",
-      })
-    ).status,
-    "approved",
-  );
-  const restarted = await start("chromium", createBrowser(storage));
-  await restarted.navigate("https://unsafe.example/approved");
-  assert.equal(restarted.navigations.length, 0);
-  await restarted.navigate("https://unsafe.example/other");
-  assert.equal(restarted.navigations.length, 1);
-  await restarted.api.tabs.onRemoved.emit(1);
-  assert.equal(storage.data.proceedTab_1, undefined);
-});
+for (const platform of ["chromium", "firefox"]) {
+  test(`${platform} approval covers paths, query strings, fragments and back navigation in the same tab`, async () => {
+    const env = await start(platform);
+    const original = "https://unsafe.example/approved";
+    await env.navigate(original);
+    assert.equal(env.navigations.length, 1);
+    await env.navigate(env.tabs.get(1).url);
+    assert.equal(
+      (await env.request({ action: "approveSite", tabId: 1, url: original }))
+        .status,
+      "approved",
+    );
+    for (const url of [
+      original,
+      "https://unsafe.example/other",
+      "https://unsafe.example/other?page=2#download",
+      "https://www.unsafe.example/another",
+      "http://unsafe.example/another",
+      original,
+    ]) {
+      await env.navigate(url);
+      assert.equal(env.navigations.length, 1, `Repeated warning for ${url}`);
+      assert.match(env.icons.at(-1).path[19], /unsafe_19.png$/);
+    }
+    assert.equal(env.errors.length, 0);
+  });
+
+  test(`${platform} keeps approvals for multiple websites through worker restart and back navigation`, async () => {
+    const storage = memoryStorage(cachedData());
+    const first = await start(platform, createBrowser(storage));
+    await first.request({
+      action: "approveSite",
+      tabId: 1,
+      url: "https://unsafe.example/approved",
+    });
+    const second = await start(platform, createBrowser(storage));
+    await second.request({
+      action: "approveSite",
+      tabId: 1,
+      url: "https://github.com/bad/repo",
+    });
+    const restarted = await start(platform, createBrowser(storage));
+    for (const url of [
+      "https://github.com/bad/repo/releases",
+      "https://unsafe.example/other",
+      "https://github.com/bad/repo/issues",
+    ]) {
+      await restarted.navigate(url);
+      assert.equal(restarted.navigations.length, 0, `Lost approval for ${url}`);
+    }
+    assert.equal(restarted.errors.length, 0);
+  });
+
+  test(`${platform} approval stays limited to its hostname and tab and expires on tab close`, async () => {
+    const env = await start(
+      platform,
+      createBrowser(
+        memoryStorage(
+          cachedData({
+            userUntrustedDomains: ["unsafe.example.evil.test"],
+          }),
+        ),
+      ),
+    );
+    await env.request({
+      action: "approveSite",
+      tabId: 1,
+      url: "https://unsafe.example/approved",
+    });
+    for (const [url, tabId] of [
+      ["https://unsafe.example/other", 2],
+      ["https://github.com/bad/repo", 1],
+      ["https://sub.unsafe.example/page", 1],
+      ["https://unsafe.example.evil.test/page", 1],
+    ]) {
+      const before = env.navigations.length;
+      await env.navigate(url, tabId);
+      assert.equal(
+        env.navigations.length,
+        before + 1,
+        `Missing warning for ${url} in tab ${tabId}`,
+      );
+    }
+    await env.api.tabs.onRemoved.emit(1);
+    await settle();
+    assert.equal(env.storage.data.proceedTab_1, undefined);
+    const before = env.navigations.length;
+    await env.navigate("https://unsafe.example/approved");
+    assert.equal(env.navigations.length, before + 1);
+    assert.equal(env.errors.length, 0);
+  });
+
+  test(`${platform} preserves approvals stored by the previous version`, async () => {
+    const storage = memoryStorage(
+      cachedData({
+        proceedTab_1: "https://www.unsafe.example/approved?old=1",
+      }),
+    );
+    const env = await start(platform, createBrowser(storage));
+    await env.navigate("https://unsafe.example/other");
+    assert.equal(env.navigations.length, 0);
+    await env.request({
+      action: "approveSite",
+      tabId: 1,
+      url: "https://github.com/bad/repo",
+    });
+    const restarted = await start(platform, createBrowser(storage));
+    await restarted.navigate("https://unsafe.example/back");
+    assert.equal(restarted.navigations.length, 0);
+    assert.equal(restarted.errors.length, 0);
+  });
+
+  test(`${platform} failed approval writes keep warnings enabled`, async () => {
+    const env = await start(platform);
+    env.storage.set = async () => {
+      throw new Error("Storage failed");
+    };
+    const response = await env.request({
+      action: "approveSite",
+      tabId: 1,
+      url: "https://unsafe.example/approved",
+    });
+    assert.equal(response.status, "error");
+    await env.navigate("https://unsafe.example/approved");
+    assert.equal(env.navigations.length, 1);
+    await env.navigate("https://unsafe.example/other");
+    assert.equal(env.navigations.length, 2);
+  });
+
+  test(`${platform} repository approval covers sibling pages but not other repositories after restart`, async () => {
+    const storage = memoryStorage(
+      cachedData({
+        unsafeReasons: {
+          "github.com/first/unsafe-repo": "Repository A",
+          "github.com/first/other-repo": "Repository B",
+          "github.com/second/unsafe-repo": "Repository C",
+          "github.com/first/unsafe-repo-copy": "Repository D",
+        },
+      }),
+    );
+    const env = await start(platform, createBrowser(storage));
+    await env.request({
+      action: "approveSite",
+      tabId: 1,
+      url: "https://github.com/first/unsafe-repo/releases/latest?download=1#files",
+    });
+    const restarted = await start(platform, createBrowser(storage));
+    for (const url of [
+      "https://github.com/first/unsafe-repo/issues",
+      "https://www.github.com/first/unsafe-repo/tree/main",
+      "https://github.com/first/unsafe-repo",
+    ]) {
+      await restarted.navigate(url);
+      assert.equal(
+        restarted.navigations.length,
+        0,
+        `Lost repository approval for ${url}`,
+      );
+    }
+    for (const url of [
+      "https://github.com/first/other-repo/releases",
+      "https://github.com/second/unsafe-repo/releases",
+      "https://github.com/first/unsafe-repo-copy/releases",
+    ]) {
+      assert.equal(
+        (await restarted.request({ action: "getSiteStatus", url })).status,
+        "unsafe",
+      );
+      const before = restarted.navigations.length;
+      await restarted.navigate(url);
+      assert.equal(
+        restarted.navigations.length,
+        before + 1,
+        `Approval leaked to ${url}`,
+      );
+    }
+    assert.equal(restarted.errors.length, 0);
+  });
+
+  test(`${platform} shared-host approvals preserve resource IDs in query strings and fragments`, async () => {
+    const env = await start(
+      platform,
+      createBrowser(
+        memoryStorage(
+          cachedData({
+            userUntrustedDomains: ["youtube.com", "matrix.to", "rentry.co"],
+          }),
+        ),
+      ),
+    );
+    for (const [approved, other] of [
+      [
+        "https://youtube.com/watch?v=first",
+        "https://youtube.com/watch?v=second",
+      ],
+      [
+        "https://matrix.to/#/#first:matrix.org",
+        "https://matrix.to/#/#second:matrix.org",
+      ],
+      ["https://rentry.co/first", "https://rentry.co/second"],
+    ]) {
+      await env.request({ action: "approveSite", tabId: 1, url: approved });
+      const before = env.navigations.length;
+      await env.navigate(approved);
+      assert.equal(env.navigations.length, before);
+      await env.navigate(other);
+      assert.equal(
+        env.navigations.length,
+        before + 1,
+        `Approval leaked to ${other}`,
+      );
+    }
+  });
+
+  test(`${platform} discards old shared-host approvals but preserves ordinary website approvals`, async () => {
+    const storage = memoryStorage(
+      cachedData({ proceedTab_1: ["github.com", "unsafe.example"] }),
+    );
+    const env = await start(platform, createBrowser(storage));
+    await env.navigate("https://unsafe.example/other");
+    assert.equal(env.navigations.length, 0);
+    await env.navigate("https://github.com/bad/repo");
+    assert.equal(env.navigations.length, 1);
+  });
+
+  test(`${platform} migrates legacy shared-host URL approval to its repository only`, async () => {
+    const storage = memoryStorage(
+      cachedData({
+        proceedTab_1: "https://github.com/first/unsafe-repo/releases/latest",
+        unsafeReasons: {
+          "github.com/first/unsafe-repo": "Repository A",
+          "github.com/second/unsafe-repo": "Repository B",
+        },
+      }),
+    );
+    const env = await start(platform, createBrowser(storage));
+    await env.navigate("https://github.com/first/unsafe-repo/issues");
+    assert.equal(env.navigations.length, 0);
+    await env.navigate("https://github.com/second/unsafe-repo/releases");
+    assert.equal(env.navigations.length, 1);
+  });
+}
 
 test("message requests wait for initialization and stale checks cannot redirect a new URL", async () => {
   const storage = memoryStorage(cachedData());

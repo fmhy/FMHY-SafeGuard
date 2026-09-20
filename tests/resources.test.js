@@ -313,3 +313,89 @@ test("normal subdomains only inherit the matching listed path", () => {
     false,
   );
 });
+
+test("approval identities group known repositories and scripts without crossing resource boundaries", () => {
+  const { getApprovalKey } = functions;
+  for (const [approved, sameResource, otherResource] of [
+    [
+      "https://github.com/owner/repo/releases",
+      "https://github.com/owner/repo/issues?sort=new#top",
+      "https://github.com/owner/repo-copy",
+    ],
+    [
+      "https://gist.github.com/owner/abc/revisions",
+      "https://gist.github.com/owner/abc#file",
+      "https://gist.github.com/owner/def",
+    ],
+    [
+      "https://raw.githubusercontent.com/owner/repo/main/file",
+      "https://raw.githubusercontent.com/owner/repo/next/file",
+      "https://raw.githubusercontent.com/owner/other/main/file",
+    ],
+    [
+      "https://codeberg.org/owner/repo/releases",
+      "https://codeberg.org/owner/repo/issues",
+      "https://codeberg.org/owner/other",
+    ],
+    [
+      "https://gitlab.com/group/subgroup/project/-/releases",
+      "https://gitlab.com/group/subgroup/project/-/issues",
+      "https://gitlab.com/group/subgroup/other/-/issues",
+    ],
+    [
+      "https://sourceforge.net/projects/tool/files/latest",
+      "https://sourceforge.net/projects/tool/reviews",
+      "https://sourceforge.net/projects/tool-copy/files",
+    ],
+    [
+      "https://greasyfork.org/en/scripts/12345-first/code",
+      "https://greasyfork.org/fr/scripts/12345-first/feedback",
+      "https://greasyfork.org/en/scripts/67890-second",
+    ],
+  ]) {
+    assert.equal(
+      getApprovalKey(approved),
+      getApprovalKey(sameResource),
+      approved,
+    );
+    assert.notEqual(
+      getApprovalKey(approved),
+      getApprovalKey(otherResource),
+      otherResource,
+    );
+  }
+});
+
+test("approval identities retain exact URLs for shared hosts without a known resource boundary", () => {
+  const { getApprovalKey } = functions;
+  for (const host of context.SafeGuard.config.sharedResourceHosts) {
+    assert.notEqual(
+      getApprovalKey(`https://${host}/`),
+      getApprovalKey(`https://${host}/owner/resource`),
+      host,
+    );
+    assert.notEqual(
+      getApprovalKey(`https://${host}/owner/resource`),
+      getApprovalKey(`https://${host}/owner/other`),
+      host,
+    );
+  }
+  for (const [one, other] of [
+    ["https://youtube.com/watch?v=one", "https://youtube.com/watch?v=other"],
+    [
+      "https://matrix.to/#/#one:matrix.org",
+      "https://matrix.to/#/#other:matrix.org",
+    ],
+    [
+      "https://drive.google.com/open?id=one",
+      "https://drive.google.com/open?id=other",
+    ],
+    [
+      "https://gitlab.com/group/subgroup/one",
+      "https://gitlab.com/group/subgroup/other",
+    ],
+    ["https://mega.nz/#one", "https://mega.nz/#other"],
+  ]) {
+    assert.notEqual(getApprovalKey(one), getApprovalKey(other), other);
+  }
+});
