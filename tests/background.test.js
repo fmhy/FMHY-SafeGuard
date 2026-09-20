@@ -117,6 +117,18 @@ test("the showWarning setting prevents redirects while keeping unsafe toolbar st
   assert.match(env.icons.at(-1).path[19], /unsafe_19.png$/);
 });
 
+test("Firefox background still protects tabs when Android has no contextMenus API", async () => {
+  const browser = createBrowser(memoryStorage(cachedData()));
+  delete browser.api.contextMenus;
+  const env = await start("firefox", browser);
+  await env.api.runtime.onInstalled.emit({ reason: "update" });
+  await env.api.runtime.onStartup.emit();
+  await env.navigate("https://unsafe.example/page");
+  assert.equal(env.navigations.length, 1);
+  assert.match(env.navigations[0].url, /warning-page.html/);
+  assert.equal(env.errors.length, 0);
+});
+
 test("duplicate navigation events do not repeat work or inherit source-site status", async () => {
   const env = await start();
   await env.navigate("https://starred.example");

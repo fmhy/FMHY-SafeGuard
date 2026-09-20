@@ -2,6 +2,7 @@ import { readFile, readdir, access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
+import { checkFirefoxDeclarations } from "./firefox-compatibility.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 async function files(directory) {
@@ -45,10 +46,16 @@ for (const platform of ["chromium", "firefox"]) {
   if (version && manifest.version !== version)
     throw new Error("Browser versions differ");
   version = manifest.version;
+  if (platform === "firefox") {
+    const metadata = JSON.parse(
+      await readFile(path.join(root, ".github/amo-metadata.json"), "utf8"),
+    );
+    checkFirefoxDeclarations(manifest, metadata);
+  }
   const references = [
     ...Object.values(manifest.icons),
     manifest.action.default_popup,
-    manifest.options_page,
+    manifest.options_page || manifest.options_ui?.page,
     ...Object.values(manifest.action.default_icon),
     ...(manifest.background.scripts || [manifest.background.service_worker]),
     ...manifest.content_scripts.flatMap((script) => [

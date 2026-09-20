@@ -16,3 +16,5 @@ jobs:
           package-manager-cache: false
       - run: npm ci
       - run: npm run verify
+      - name: Check Firefox desktop and Android compatibility
+        run: npm run check:firefox

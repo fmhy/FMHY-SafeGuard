@@ -8,10 +8,13 @@
 - Approvals stay within the current tab, survive background-worker restarts for multiple approved websites, and expire when the tab closes.
 - Kept approvals on shared hosts limited to the repository, script, or exact resource URL. Approving one GitHub repository does not suppress warnings for another.
 - Proceeding replaces the warning page in browser history so Back does not reopen it.
+- Restored Firefox for Android declarations in the manifest and AMO submission metadata so uploads include desktop and Android compatibility ([#99](https://github.com/fmhy/FMHY-SafeGuard/issues/99)). Firefox settings now use `options_ui` to support the declared minimum versions: desktop 109 and Android 120.
+- Added Mozilla compatibility checks in CI and immediately before Firefox store submission. Uploads stop on linter errors, compatibility warnings, or missing Android declarations.
 
 #### Validation
 
-- All 93 automated tests, lint, source checks, and both browser builds pass.
+- All 104 automated tests, lint, source checks, and both browser builds pass.
+- Passed Mozilla's compatibility lint for Firefox desktop 109+ and Android 120+. Regression tests cover missing Android declarations, unsupported API/version warnings, and background startup without Android's unavailable context-menu API. Android device testing remains separate.
 - Passed 10 browser checks in Chrome for Testing 153 and 9 in Firefox 147 using isolated profiles. Covered page navigation, Back, separate tabs, multiple approved websites, tab-close cleanup, and repository boundaries on GitHub. Chrome also passed a real service-worker restart check.
 
 ## v1.4.2 (09/09/2026)

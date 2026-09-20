@@ -13,7 +13,10 @@
         },
         "default_popup": "pub/index.html"
     },
-    "options_page": "pub/settings-page.html",
+    "options_ui": {
+        "page": "pub/settings-page.html",
+        "open_in_tab": true
+    },
     "permissions": [
         "storage",
         "tabs",
@@ -109,7 +112,11 @@
     },
     "browser_specific_settings": {
         "gecko": {
-            "id": "{5d554479-7cc4-487f-bd25-d8fc67a42602}"
+            "id": "{5d554479-7cc4-487f-bd25-d8fc67a42602}",
+            "strict_min_version": "109.0"
+        },
+        "gecko_android": {
+            "strict_min_version": "120.0"
         }
     },
     "description": "__MSG_extensionDescription__"

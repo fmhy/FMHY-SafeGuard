@@ -173,6 +173,14 @@ jobs:
           name: extension-release-${{ needs.release.outputs.version }}
           path: dist
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Check Firefox desktop and Android compatibility before upload
+        run: npm run check:firefox
+
       - name: Submit Firefox extension for review
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
@@ -180,9 +188,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npx --yes web-ext@8.10.0 sign \
+          npx --yes web-ext@10.6.0 sign \
             --source-dir dist/firefox \
             --artifacts-dir dist/firefox-submission \
             --channel listed \
+            --amo-metadata .github/amo-metadata.json \
             --approval-timeout 0 \
-            --no-input
+            --no-input \
+            --no-config-discovery

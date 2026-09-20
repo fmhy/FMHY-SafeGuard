@@ -5,6 +5,7 @@ Install a Node.js version supported by `package.json`, then run:
 ```sh
 npm ci
 npm run verify
+npm run check:firefox
 npm run build:test
 ```
 
@@ -13,6 +14,10 @@ npm run build:test
 `build` writes unpacked extensions to `dist/chromium` and `dist/firefox`. `build:test` regenerates `test-builds/chrome` and `test-builds/firefox` for the existing browser testing workflow. Edit `src` and `platform`, then regenerate those folders. Changes made directly to a generated folder disappear on the next build.
 
 The shell scripts in `tools` package the same builds as ZIP or XPI archives with the manifest at the archive root. Firefox packages produced locally are unsigned. Release workflows run the same checks before packaging.
+
+`check:firefox` runs Mozilla's pinned `web-ext` linter against `dist/firefox`, so run `build` or `verify` first. It requires the Firefox manifest to declare minimum versions for desktop and Android, and `.github/amo-metadata.json` to include both platforms. Linter errors and compatibility warnings block the check; unrelated advisory warnings remain visible. This command downloads `web-ext` through npm when needed.
+
+CI runs this check after building, and the Firefox release job repeats it on the downloaded build immediately before submitting to AMO. The submission passes the compatibility metadata to AMO so future versions retain Android support. The current minimums are Firefox 109 on desktop and Firefox 120 on Android. Mozilla's linter does not detect every unsupported Android API or test mobile behavior; test install, popup, settings, search highlights, and unsafe-site warnings on an Android device before releasing.
 
 ## Code layout
 
