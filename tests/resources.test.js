@@ -314,6 +314,35 @@ test("normal subdomains only inherit the matching listed path", () => {
   );
 });
 
+test("resource matching stops at the hosting provider while preserving listed sites", () => {
+  for (const [current, listed, matches] of [
+    ["https://unlisted.neocities.org/page", "https://neocities.org", false],
+    [
+      "https://www.unlisted.neocities.org/page",
+      "https://www.neocities.org/",
+      false,
+    ],
+    ["https://listed.neocities.org/page", "https://listed.neocities.org", true],
+    ["https://other.neocities.org/page", "https://listed.neocities.org", false],
+    ["https://sub.ordinary.example/page", "https://ordinary.example", true],
+    ["https://sub.notneocities.org/page", "https://notneocities.org", true],
+  ]) {
+    assert.equal(
+      functions.urlMatchesListedResource(current, listed),
+      matches,
+      current,
+    );
+    assert.equal(
+      functions.findMatchingListedResource(
+        current,
+        functions.buildResourceIndex([listed]),
+      ),
+      matches ? listed : undefined,
+      current,
+    );
+  }
+});
+
 test("approval identities group known repositories and scripts without crossing resource boundaries", () => {
   const { getApprovalKey } = functions;
   for (const [approved, sameResource, otherResource] of [

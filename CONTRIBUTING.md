@@ -40,7 +40,7 @@ CI runs this check after building, and the Firefox release job repeats it on the
 
 Modules expose their interfaces through `globalThis.SafeGuard`. Their internal variables stay inside closures. Chromium loads background dependencies with `importScripts`; Firefox lists them in its manifest. Page scripts and content scripts also list their dependencies explicitly. Tests execute those same scripts, including both background loading paths.
 
-`createCatalogue` accepts storage, fetch and an update callback. It owns classification state. The toolbar and popup both request `getSiteStatus`, so user overrides, resource paths and unsafe reasons have one implementation. Shared hosts such as GitHub require a matching resource, while ordinary domains may inherit a listed parent domain's classification.
+`createCatalogue` accepts storage, fetch and an update callback. It owns classification state. The toolbar and popup both request `getSiteStatus`, so user overrides, resource paths and unsafe reasons have one implementation. Shared hosts such as GitHub require a matching resource, while ordinary domains may inherit a listed parent domain's classification. For providers in `subdomainHostingHosts`, currently Neocities, safe and starred ratings stop at the provider domain. Individually listed tenant sites retain their own ratings and path matching.
 
 Refreshes download all sources and compile a replacement snapshot before writing storage. Concurrent refreshes share the same promise. A failed download or storage write keeps the previous snapshot and timestamp. Startup loads cached data before attempting a refresh, so an offline start retains the last usable classifications. Scheduled refreshes update both unsafe lists and resource guides.
 

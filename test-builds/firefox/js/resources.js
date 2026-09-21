@@ -2,7 +2,8 @@
 globalThis.SafeGuard ||= {};
 SafeGuard.resources = (() => {
   "use strict";
-  const { sharedResourceHosts, searchEngines } = SafeGuard.config;
+  const { sharedResourceHosts, subdomainHostingHosts, searchEngines } =
+    SafeGuard.config;
   function normalizeUrl(url) {
     if (!url) {
       console.warn("Received null or undefined URL.");
@@ -120,9 +121,10 @@ SafeGuard.resources = (() => {
     const listedHost = listed.hostname.replace(/^www\./, "").toLowerCase();
     const sharedHost =
       isSharedResourceHost(currentHost) || isSharedResourceHost(listedHost);
-    const hostMatches = sharedHost
-      ? currentHost === listedHost
-      : currentHost === listedHost || currentHost.endsWith(`.${listedHost}`);
+    const hostMatches =
+      sharedHost || subdomainHostingHosts.has(listedHost)
+        ? currentHost === listedHost
+        : currentHost === listedHost || currentHost.endsWith(`.${listedHost}`);
     if (!hostMatches) return false;
 
     const currentPath = current.pathname.replace(/\/+$/, "").toLowerCase();
@@ -225,11 +227,13 @@ SafeGuard.resources = (() => {
     const candidateHosts = [hostname];
 
     // Normal sites can inherit a resource classification from a listed parent
-    // domain. Shared platforms must remain scoped to their exact hostname.
+    // domain, but not from a hosting provider. Shared resources require an exact host.
     if (!isSharedResourceHost(hostname)) {
       const labels = hostname.split(".");
       for (let index = 1; index < labels.length - 1; index += 1) {
-        candidateHosts.push(labels.slice(index).join("."));
+        const parentHost = labels.slice(index).join(".");
+        if (subdomainHostingHosts.has(parentHost)) break;
+        candidateHosts.push(parentHost);
       }
     }
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.4 (09/21/2026)
+
+#### **🐞 Bug Fixes**
+
+- Fixed unlisted Neocities sites inheriting Neocities' safe or starred rating. Individually listed sites retain their own ratings, matching paths, and FMHY guide links. [#101](https://github.com/fmhy/FMHY-SafeGuard/issues/101).
+
+#### **✅ Validation**
+
+- All 110 automated tests, lint, source checks, and both browser builds pass. Regression tests cover Neocities site boundaries and popup/toolbar agreement in Chromium and Firefox.
+- Passed Mozilla's compatibility checks for desktop Firefox 109+ and Android Firefox 120+.
+- Passed six live-site popup checks in Chrome for Testing 153 and Firefox 147, covering Neocities itself, unlisted sites, individually listed safe and starred sites, and path-specific listings. Firefox's toolbar icons matched all six results.
+
 ## v1.4.3 (09/19/2026)
 
 #### **🐞 Bug Fixes**

@@ -69,6 +69,31 @@ async function start(
 }
 
 for (const platform of ["chromium", "firefox"]) {
+  test(`${platform} popup and toolbar use a Neocities site's own rating`, async () => {
+    const env = await start(
+      platform,
+      createBrowser(
+        memoryStorage(
+          cachedData({
+            starredSites: ["https://neocities.org"],
+            safeSiteList: ["https://listed.neocities.org"],
+          }),
+        ),
+      ),
+    );
+    for (const [url, status, icon] of [
+      ["https://neocities.org/", "starred", "starred_19.png"],
+      ["https://unlisted.neocities.org/page", "no_data", "default_19.png"],
+      ["https://listed.neocities.org/page", "safe", "safe_19.png"],
+    ]) {
+      const response = await env.request({ action: "getSiteStatus", url });
+      assert.equal(response.status, status, url);
+      await env.navigate(url);
+      assert.ok(env.icons.at(-1).path[19].endsWith(`/${icon}`), url);
+    }
+    assert.deepEqual(env.errors, []);
+  });
+
   test(`${platform} loads packaged toolbar icons for every site status`, async () => {
     const env = await start(platform);
     for (const [url, icon] of [

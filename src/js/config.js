@@ -39,6 +39,8 @@ SafeGuard.config = (() => {
   const notesBaseURL =
     "https://raw.githubusercontent.com/fmhy/edit/main/docs/.vitepress/notes/";
   const resourceIdentityVersion = 2;
+  // Each tenant has its own site; the provider's rating must not extend to it.
+  const subdomainHostingHosts = new Set(["neocities.org"]);
   const sharedResourceHosts = new Set([
     "github.com",
     "gist.github.com",
@@ -113,6 +115,7 @@ SafeGuard.config = (() => {
     unsafeReasonsURL,
     notesBaseURL,
     resourceIdentityVersion,
+    subdomainHostingHosts,
     sharedResourceHosts,
     searchEngines,
   };

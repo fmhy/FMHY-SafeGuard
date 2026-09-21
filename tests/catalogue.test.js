@@ -15,6 +15,70 @@ async function setup(
   return { catalogue, storage, context };
 }
 
+for (const list of ["starredSites", "safeSiteList"]) {
+  test(`Neocities sites do not inherit the hosting platform's ${list} rating`, async () => {
+    const { catalogue } = await setup({
+      starredSites: [],
+      safeSiteList: [],
+      [list]: ["https://neocities.org"],
+      fmhyResourceMap: {
+        "https://neocities.org":
+          "https://fmhy.net/developer-tools#website-hosting",
+      },
+    });
+    for (const url of [
+      "https://unlisted.neocities.org/",
+      "https://unlisted.neocities.org/page",
+      "http://www.unlisted.neocities.org/page?query=1#section",
+    ]) {
+      const result = catalogue.getSiteStatus(url);
+      assert.equal(result.status, "no_data", url);
+      assert.equal(result.matchedUrl, null, url);
+      assert.equal(result.fmhyUrl, null, url);
+    }
+  });
+}
+
+test("listed Neocities sites keep their own ratings, paths and guide links", async () => {
+  const { catalogue } = await setup({
+    starredSites: ["https://neocities.org", "https://starred.neocities.org"],
+    safeSiteList: [
+      "https://safe.neocities.org",
+      "https://partial.neocities.org/downloads",
+    ],
+    fmhyResourceMap: {
+      "https://neocities.org":
+        "https://fmhy.net/developer-tools#website-hosting",
+      "https://safe.neocities.org": "https://fmhy.net/internet-tools#tools",
+    },
+  });
+  for (const [url, status, matchedUrl] of [
+    ["https://www.neocities.org/", "starred", "https://neocities.org"],
+    ["https://neocities.org/help", "starred", "https://neocities.org"],
+    [
+      "https://starred.neocities.org/page",
+      "starred",
+      "https://starred.neocities.org",
+    ],
+    ["https://safe.neocities.org/page", "safe", "https://safe.neocities.org"],
+    [
+      "https://partial.neocities.org/downloads/tool",
+      "safe",
+      "https://partial.neocities.org/downloads",
+    ],
+    ["https://partial.neocities.org/downloads-copy", "no_data", null],
+    ["https://partial.neocities.org/other", "no_data", null],
+  ]) {
+    const result = catalogue.getSiteStatus(url);
+    assert.equal(result.status, status, url);
+    assert.equal(result.matchedUrl, matchedUrl, url);
+  }
+  assert.equal(
+    catalogue.getSiteStatus("https://safe.neocities.org/page").fmhyUrl,
+    "https://fmhy.net/internet-tools#tools",
+  );
+});
+
 for (const [url, status] of [
   ["https://unsafe.example/path", "unsafe"],
   ["http://sub.unsafe.example", "unsafe"],
