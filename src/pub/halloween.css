@@ -1,0 +1,200 @@
+/* Seasonal Halloween accents (October). Bundled fluentui-emoji icons. */
+
+:root {
+  --halloween-purple: #6a0dad;
+  --halloween-orange: #ff7518;
+  --halloween-purple-soft: #9b5de5;
+}
+
+body {
+  --accent-color: var(--halloween-purple-soft);
+  --link-color: var(--halloween-orange);
+  --accent-purple: var(--halloween-purple);
+  --accent-blue: var(--halloween-orange);
+}
+
+[data-theme="light"] {
+  --accent-color: var(--halloween-purple);
+  --link-color: #d35400;
+  --accent-purple: var(--halloween-purple);
+  --accent-blue: #d35400;
+}
+
+[data-theme="amoled"] {
+  --accent-color: var(--halloween-purple-soft);
+  --link-color: var(--halloween-orange);
+  --accent-purple: var(--halloween-purple);
+  --accent-blue: var(--halloween-orange);
+}
+
+.title h1,
+h1.title,
+.welcome-header .title {
+  background: linear-gradient(
+    120deg,
+    var(--halloween-purple) 30%,
+    var(--halloween-orange)
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+#footer a,
+#feedback a,
+.footer a {
+  color: var(--halloween-orange);
+}
+
+.floating-icon {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  opacity: 0.1;
+  pointer-events: none;
+  filter: grayscale(100%) brightness(0.7);
+  animation: halloween-float 8s ease-in-out infinite,
+    halloween-spin 5s linear infinite;
+  z-index: 0;
+}
+
+.settings-page .floating-icon,
+.warning-page .floating-icon,
+.welcome-page .floating-icon {
+  position: fixed;
+  width: 36px;
+  height: 36px;
+  opacity: 0.07;
+  filter: grayscale(100%) brightness(0.55);
+  animation: halloween-float 12s ease-in-out infinite,
+    halloween-spin 8s linear infinite;
+  z-index: 1;
+}
+
+.halloween-icon-1 {
+  top: 12%;
+  left: 10%;
+  animation-delay: 0s;
+}
+.halloween-icon-2 {
+  top: 22%;
+  left: 68%;
+  animation-delay: 1s;
+}
+.halloween-icon-3 {
+  top: 48%;
+  left: 32%;
+  animation-delay: 2s;
+}
+.halloween-icon-4 {
+  top: 68%;
+  left: 12%;
+  animation-delay: 3s;
+}
+.halloween-icon-5 {
+  top: 78%;
+  left: 72%;
+  animation-delay: 4s;
+}
+.halloween-icon-6 {
+  top: 18%;
+  left: 46%;
+  animation-delay: 5s;
+}
+.halloween-icon-7 {
+  top: 56%;
+  left: 78%;
+  animation-delay: 6s;
+}
+.halloween-icon-8 {
+  top: 38%;
+  left: 8%;
+  animation-delay: 7s;
+}
+
+.settings-page .halloween-icon-1,
+.welcome-page .halloween-icon-1 {
+  top: 8%;
+  left: 8%;
+}
+.settings-page .halloween-icon-2,
+.welcome-page .halloween-icon-2 {
+  top: 12%;
+  right: 12%;
+  left: auto;
+}
+.settings-page .halloween-icon-3,
+.welcome-page .halloween-icon-3 {
+  bottom: 15%;
+  top: auto;
+  left: 15%;
+}
+.settings-page .halloween-icon-4,
+.welcome-page .halloween-icon-4 {
+  bottom: 20%;
+  top: auto;
+  right: 20%;
+  left: auto;
+}
+
+.warning-page .halloween-icon-1 {
+  top: 5%;
+  left: 10%;
+}
+.warning-page .halloween-icon-2 {
+  top: 15%;
+  right: 15%;
+  left: auto;
+}
+.warning-page .halloween-icon-3 {
+  top: 40%;
+  left: 5%;
+}
+.warning-page .halloween-icon-4 {
+  top: 60%;
+  right: 10%;
+  left: auto;
+}
+.warning-page .halloween-icon-5 {
+  bottom: 20%;
+  top: auto;
+  left: 20%;
+}
+.warning-page .halloween-icon-6 {
+  bottom: 10%;
+  top: auto;
+  right: 25%;
+  left: auto;
+}
+.warning-page .halloween-icon-7 {
+  top: 25%;
+  left: 50%;
+}
+.warning-page .halloween-icon-8 {
+  bottom: 40%;
+  top: auto;
+  right: 50%;
+  left: auto;
+}
+
+@keyframes halloween-float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  33% {
+    transform: translateY(-10px) translateX(6px);
+  }
+  66% {
+    transform: translateY(5px) translateX(-5px);
+  }
+}
+
+@keyframes halloween-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

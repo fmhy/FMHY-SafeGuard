@@ -104,10 +104,21 @@
 
   function extractDomainsFromUrls(urls) {
     const domains = new Set();
+    const { sharedResourceHosts, subdomainHostingHosts } = SafeGuard.config;
 
     for (const site of urls || []) {
       try {
-        domains.add(normalizeDomain(new URL(site).hostname));
+        const domain = normalizeDomain(new URL(site).hostname);
+        // Mirror compact-index builders: skip path-scoped shared hosts.
+        let shared = false;
+        for (const host of sharedResourceHosts) {
+          if (domain === host || domain.endsWith(`.${host}`)) {
+            shared = true;
+            break;
+          }
+        }
+        if (shared || subdomainHostingHosts.has(domain)) continue;
+        domains.add(domain);
       } catch (error) {
         // Ignore malformed entries from legacy caches.
       }
@@ -364,8 +375,9 @@
     }
   }
 
-  // Clean up dynamic-page work when the page is unloaded
-  window.addEventListener("unload", () => {
+  // Clean up dynamic-page work when the page is hidden/unloaded.
+  // Prefer pagehide: Permissions-Policy may block window "unload" listeners.
+  window.addEventListener("pagehide", () => {
     pageObserver?.disconnect();
     if (reprocessTimer) clearTimeout(reprocessTimer);
   });

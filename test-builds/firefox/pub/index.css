@@ -42,6 +42,8 @@ body {
   /* Limit the width to make it more compact */
   position: relative;
   /* For absolute positioning of settings button */
+  overflow: hidden;
+  /* Keep seasonal floating icons inside the popup */
 }
 
 .header {

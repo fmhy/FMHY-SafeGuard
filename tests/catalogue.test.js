@@ -171,6 +171,27 @@ test("the longest path-specific reason wins without crossing path boundaries", a
   );
 });
 
+test("compact SERP indexes omit shared hosts while keeping ordinary domains", async () => {
+  const { storage } = await setup({
+    unsafeSites: [
+      "https://unsafe.example",
+      "https://github.com/bad/repo",
+      "https://neocities.org",
+    ],
+    safeSiteList: [
+      "https://safe.example/docs",
+      "https://github.com/safe/repo",
+      "https://listed.neocities.org",
+      "https://rentry.co/fmhy",
+    ],
+  });
+  assert.deepEqual(storage.data.unsafeDomainList, ["unsafe.example"]);
+  assert.deepEqual(storage.data.safeDomainList, [
+    "safe.example",
+    "listed.neocities.org",
+  ]);
+});
+
 test("offline startup keeps cached classifications and the last successful timestamp", async () => {
   const lastUpdated = "2020-01-01T00:00:00.000Z";
   const { catalogue, storage } = await setup({ lastUpdated }, async () => {
