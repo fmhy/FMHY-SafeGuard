@@ -183,6 +183,23 @@ test("legacy URL caches still provide highlighting", async (t) => {
   assert.equal(env.document.querySelector("a").style.fontWeight, "bold");
 });
 
+test("legacy URL caches skip shared-host domains for SERP highlighting", async (t) => {
+  const env = await searchPage(
+    "www.bing.com",
+    {
+      unsafeDomainList: undefined,
+      safeDomainList: undefined,
+      unsafeSites: ["https://github.com/bad/repo"],
+      safeSiteList: ["https://github.com/safe/repo", "https://safe.example"],
+    },
+    '<a href="https://github.com/other/repo">GitHub</a><a href="https://safe.example">Safe</a>',
+  );
+  t.after(() => env.window.close());
+  const links = [...env.document.querySelectorAll("a")];
+  assert.equal(links[0].style.fontWeight, "");
+  assert.equal(links[1].style.fontWeight, "bold");
+});
+
 test("FMHY guide highlights the matching resource and consumes its pending request", async (t) => {
   const browser = createBrowser(
     memoryStorage({

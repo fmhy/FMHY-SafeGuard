@@ -278,9 +278,29 @@ test("compact domain indexes deduplicate normalized hostnames", () => {
       "https://www.example.com/path",
       "https://example.com/other",
       "https://github.com/fmhy/FMHY-SafeGuard",
+      "https://neocities.org",
+      "https://listed.neocities.org/page",
       "not a valid URL",
     ]),
-    ["example.com", "github.com"],
+    ["example.com", "listed.neocities.org"],
+  );
+});
+
+test("compact domain indexes exclude shared hosts and hosting providers", () => {
+  const extractUniqueHostnamesFromUrls =
+    functions.extractUniqueHostnamesFromUrls;
+
+  assert.deepEqual(
+    extractUniqueHostnamesFromUrls([
+      "https://github.com/fmhy/FMHY-SafeGuard",
+      "https://gitlab.com/group/project",
+      "https://rentry.co/fmhy",
+      "https://gist.github.com/user/abc",
+      "https://neocities.org/",
+      "https://safe.example/docs",
+      "https://listed.neocities.org",
+    ]),
+    ["safe.example", "listed.neocities.org"],
   );
 });
 

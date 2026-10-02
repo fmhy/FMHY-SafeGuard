@@ -332,7 +332,16 @@ SafeGuard.resources = (() => {
         const hostname = new URL(source).hostname
           .replace(/^www\./, "")
           .toLowerCase();
-        if (hostname) hostnames.add(hostname);
+        if (!hostname) continue;
+        // Shared hosts and hosting providers are path/tenant-scoped. Domain-only
+        // SERP indexes must not blanket-highlight every listing under them.
+        if (
+          isSharedResourceHost(hostname) ||
+          subdomainHostingHosts.has(hostname)
+        ) {
+          continue;
+        }
+        hostnames.add(hostname);
       } catch (error) {
         // Ignore malformed entries; the URL lists are validated separately.
       }

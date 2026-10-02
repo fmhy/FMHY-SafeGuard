@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.4.5 (10/02/2026)
+
+#### **🐞 Bug Fixes**
+
+- Excluded shared hosts (GitHub, GitLab, Rentry, and other path-scoped platforms) and hosting providers such as Neocities from the compact safe/unsafe domain indexes used for search-result highlighting. Path-aware popup, toolbar, and warning classification is unchanged.
+- Corrected the README search-highlighting description so it no longer claims SERP highlighting covers potentially dangerous sites (those lists are never loaded by the content script).
+
+#### **🔧 Enhancements**
+
+- Restored a seasonal Halloween theme for October: purple-to-orange accents and subtle floating ghost, pumpkin, skull, and zombie icons on the popup, settings, warning, and welcome pages. Icons are bundled under `src/res/icons/halloween/` so extension pages do not depend on remote raw.githubusercontent.com assets. Accents adapt to light, dark, and AMOLED themes.
+
+#### **✅ Validation**
+
+- Automated tests, lint, source checks, and both browser builds cover compact-index shared-host exclusion (including legacy content-script fallback caches) and Neocities provider boundaries.
+
+
 ## v1.4.4 (09/21/2026)
 
 #### **🐞 Bug Fixes**
