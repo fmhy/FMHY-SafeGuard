@@ -4,7 +4,7 @@
 
 #### **🔧 Enhancements**
 
-- Removed the seasonal Halloween theme. The popup, settings, warning, and welcome pages return to the standard accents, and the bundled Halloween icons are no longer shipped.
+- The Halloween theme now turns on automatically each October (October 1–31, local time) on the popup, settings, warning, and welcome pages. For the rest of the year these pages use the standard accents and do not load the Halloween stylesheet or icons.
 
 ## v1.4.5 (10/02/2026)
 

@@ -35,6 +35,7 @@ CI runs this check after building, and the Firefox release job repeats it on the
 | `src/js/link-renderer.js` | Link decorations, badges and restoration of original styles |
 | `src/js/page-ui.js` | Safe markup rendering, note formatting and copyable values |
 | `src/js/i18n.js` | Language selection and translation loading |
+| `src/js/seasonal-theme.js` | Seasonal theme dates and loading their stylesheet and icons on extension pages |
 | `src/pub` | Extension page controllers, HTML and CSS |
 | `docs` | Static documentation website |
 
