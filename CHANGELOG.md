@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### **🔧 Enhancements**
+
+- Removed the seasonal Halloween theme. The popup, settings, warning, and welcome pages return to the standard accents, and the bundled Halloween icons are no longer shipped.
+
 ## v1.4.5 (10/02/2026)
 
 #### **🐞 Bug Fixes**

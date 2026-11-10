@@ -375,8 +375,9 @@
     }
   }
 
-  // Clean up dynamic-page work when the page is unloaded
-  window.addEventListener("unload", () => {
+  // Clean up dynamic-page work when the page is hidden/unloaded.
+  // Prefer pagehide: Permissions-Policy may block window "unload" listeners.
+  window.addEventListener("pagehide", () => {
     pageObserver?.disconnect();
     if (reprocessTimer) clearTimeout(reprocessTimer);
   });
