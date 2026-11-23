@@ -10,6 +10,7 @@ SafeGuard.settings = (() => {
     highlightTrusted: true,
     highlightUntrusted: true,
     showWarningBanners: true,
+    showNewBadges: true,
     trustedColor: "#32cd32",
     untrustedColor: "#ff4444",
     userTrustedDomains: [],
@@ -24,6 +25,7 @@ SafeGuard.settings = (() => {
     "highlightTrusted",
     "highlightUntrusted",
     "showWarningBanners",
+    "showNewBadges",
     "trustedColor",
     "untrustedColor",
     "userTrustedDomains",
@@ -66,6 +68,17 @@ SafeGuard.settings = (() => {
     if (Object.keys(missing).length) await storage.set(missing);
   }
 
+  // First-seen times come from the catalogue; badges expire on display so a
+  // long update interval cannot keep an old listing marked as new.
+  function isNewListing(firstSeen, now = Date.now()) {
+    const age = now - firstSeen;
+    return (
+      Number.isFinite(age) &&
+      age >= 0 &&
+      age < SafeGuard.config.newListingDays * 86400000
+    );
+  }
+
   function periodInMinutes(frequency) {
     return updatePeriods[frequency] || updatePeriods.daily;
   }
@@ -102,6 +115,7 @@ SafeGuard.settings = (() => {
     parseDomainList,
     read,
     initialize,
+    isNewListing,
     periodInMinutes,
     nextUpdateTime,
     shouldUpdate,

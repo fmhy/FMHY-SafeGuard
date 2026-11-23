@@ -82,6 +82,28 @@ test("unknown popup sites use the neutral icon", async (t) => {
   );
 });
 
+test("popup shows the NEW pill only for new listings when the setting is on", async (t) => {
+  for (const [showNewBadges, response, visible] of [
+    [true, { status: "safe", isNew: true }, true],
+    [true, { status: "starred", isNew: false }, false],
+    [false, { status: "safe", isNew: true }, false],
+    [true, { status: "unsafe", isNew: true }, false],
+  ]) {
+    const browser = createBrowser(memoryStorage({ showNewBadges }));
+    browser.api.runtime.sendMessage = async (message) =>
+      message.action === "getNoteForSite"
+        ? { note: null }
+        : { matchedUrl: "https://safe.example/docs", ...response };
+    const env = await page("index", browser);
+    t.after(() => env.window.close());
+    assert.equal(
+      env.document.getElementById("new-badge").classList.contains("visible"),
+      visible,
+      JSON.stringify({ showNewBadges, response }),
+    );
+  }
+});
+
 test("settings save preferences without changing the successful update timestamp", async (t) => {
   const browser = createBrowser(
     memoryStorage(cachedData({ theme: "dark", showWarning: false })),
@@ -91,12 +113,18 @@ test("settings save preferences without changing the successful update timestamp
   t.after(() => env.window.close());
   assert.equal(env.document.body.dataset.theme, "dark");
   assert.equal(env.document.getElementById("warningToggle").checked, false);
+  assert.equal(
+    env.document.getElementById("showNewBadgesToggle").checked,
+    true,
+  );
+  env.document.getElementById("showNewBadgesToggle").checked = false;
   env.document.getElementById("trustedDomains").value =
     "WWW.Example.COM/path\nhttps://example.com\n# comment";
   env.document.getElementById("saveSettings").click();
   await settle();
   assert.equal(browser.storage.data.lastUpdated, lastUpdated);
   assert.deepEqual(browser.storage.data.userTrustedDomains, ["example.com"]);
+  assert.equal(browser.storage.data.showNewBadges, false);
   assert.deepEqual(
     browser.messages.map((message) => message.action),
     ["updateAlarm", "refreshAllTabs"],

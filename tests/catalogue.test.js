@@ -112,6 +112,7 @@ test("status returns canonical guide paths, reasons and exact resource passwords
     {
       status: "safe",
       matchedUrl: "https://safe.example/docs",
+      isNew: false,
       fmhyUrl: "https://fmhy.net/privacy#tools",
       reason: null,
       password: null,
@@ -330,4 +331,98 @@ test("note requests share in-flight work and failed requests can retry", async (
   assert.equal(requests, 2);
   assert.equal(notes[0].note, "A note");
   assert.equal(notes[1].slug, "1337x-ranks");
+});
+
+test("refresh marks listings missing from the previous snapshot as new", async () => {
+  const context = loadModules();
+  const storage = memoryStorage(cachedData());
+  const remote = remoteData(context);
+  const catalogue = context.SafeGuard.createCatalogue({
+    storage,
+    fetch: remote.fetch,
+  });
+  await catalogue.initialize();
+  const before = Date.now();
+  await catalogue.refresh();
+  assert.deepEqual(Object.keys(storage.data.newListings).sort(), [
+    "https://mirror.example",
+    "https://new-safe.example/path",
+  ]);
+  assert.deepEqual(Object.keys(storage.data.newDomainList).sort(), [
+    "mirror.example",
+    "new-safe.example",
+  ]);
+  assert.ok(storage.data.newDomainList["mirror.example"] >= before);
+  assert.equal(
+    catalogue.getSiteStatus("https://new-safe.example/path/page").isNew,
+    true,
+  );
+  assert.equal(catalogue.getSiteStatus("https://mirror.example/").isNew, true);
+  assert.equal(
+    catalogue.getSiteStatus("https://new-unsafe.example").isNew,
+    false,
+  );
+
+  // A later refresh keeps the original first-seen time.
+  const firstSeen = storage.data.newListings["https://mirror.example"];
+  await catalogue.refresh();
+  assert.equal(storage.data.newListings["https://mirror.example"], firstSeen);
+});
+
+test("the first download is a baseline, not a list of new sites", async () => {
+  const context = loadModules();
+  const storage = memoryStorage();
+  const remote = remoteData(context);
+  const catalogue = context.SafeGuard.createCatalogue({
+    storage,
+    fetch: remote.fetch,
+  });
+  await catalogue.initialize();
+  assert.deepEqual(plain(storage.data.newListings), {});
+  assert.deepEqual(plain(storage.data.newDomainList), {});
+  assert.equal(
+    catalogue.getSiteStatus("https://new-safe.example/path").isNew,
+    false,
+  );
+});
+
+test("new listings expire after the window and bulk list changes are ignored", async () => {
+  const context = loadModules();
+  const days = context.SafeGuard.config.newListingDays;
+  const old = Date.now() - days * 86400000 - 1;
+  const recent = Date.now() - 60000;
+  const { catalogue } = await setup({
+    newListings: {
+      "https://safe.example/docs": old,
+      "https://github.com/safe/repo": recent,
+    },
+  });
+  assert.equal(
+    catalogue.getSiteStatus("https://safe.example/docs").isNew,
+    false,
+  );
+  assert.equal(
+    catalogue.getSiteStatus("https://github.com/safe/repo").isNew,
+    true,
+  );
+
+  // Dozens of unseen links at once (a new guide page) set a new baseline.
+  const bulk = loadModules();
+  const storage = memoryStorage(cachedData());
+  const remote = remoteData(bulk);
+  const links = Array.from(
+    { length: 60 },
+    (_, index) => `* [Site ${index}](https://bulk${index}.example/)`,
+  ).join("\n");
+  const second = bulk.SafeGuard.createCatalogue({
+    storage,
+    fetch: async (url) =>
+      bulk.SafeGuard.config.safeListURLs.includes(url)
+        ? { ok: true, status: 200, text: async () => links }
+        : remote.fetch(url),
+  });
+  await second.initialize();
+  await second.refresh();
+  assert.deepEqual(plain(storage.data.newListings), {});
+  assert.deepEqual(plain(storage.data.newDomainList), {});
 });

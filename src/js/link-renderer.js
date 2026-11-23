@@ -4,6 +4,7 @@ SafeGuard.createLinkRenderer = (getSettings) => {
   const { normalizeDomain } = SafeGuard.settings;
   const originals = new WeakMap();
   const badges = new WeakMap();
+  const newBadges = new WeakMap();
   function remember(link) {
     if (!originals.has(link))
       originals.set(link, {
@@ -20,6 +21,8 @@ SafeGuard.createLinkRenderer = (getSettings) => {
     }
     badges.get(link)?.remove();
     badges.delete(link);
+    newBadges.get(link)?.remove();
+    newBadges.delete(link);
     link.removeAttribute("data-fmhy-unsafe");
     link.removeAttribute("data-fmhy-safe");
     link.removeAttribute("data-fmhy-processed");
@@ -27,7 +30,7 @@ SafeGuard.createLinkRenderer = (getSettings) => {
   function clearAll() {
     document.querySelectorAll("a[data-fmhy-processed]").forEach(clear);
     document
-      .querySelectorAll(".fmhy-unsafe-badge")
+      .querySelectorAll(".fmhy-unsafe-badge, .fmhy-new-badge")
       .forEach((badge) => badge.remove());
   }
   function setUnsafeBadgeContent(badge, reason) {
@@ -85,6 +88,44 @@ SafeGuard.createLinkRenderer = (getSettings) => {
         : getSettings().untrustedColor;
     link.style.textShadow = `0 0 4px ${color}`;
     link.style.fontWeight = "bold";
+  }
+
+  // Neutral pill matching fmhy.net's NEW badge. It says nothing about safety,
+  // so it stays grey regardless of the trusted highlight color.
+  function addNewBadge(link, label, title) {
+    // Only result titles get the pill. Favicon, cite and sitelink anchors
+    // for the same domain would otherwise repeat it or claim it first.
+    const titleSelector = "h1, h2, h3, h4, [role='heading'], .title";
+    const heading =
+      link.querySelector(titleSelector) || link.closest(titleSelector);
+    if (!heading) return false;
+    const badge = document.createElement("span");
+    badge.className = "fmhy-new-badge";
+    badge.textContent = label;
+    badge.title = title;
+    const style = {
+      display: "inline-block",
+      margin: "0 0 0 6px",
+      padding: "1px 6px",
+      border: "0",
+      "border-radius": "999px",
+      "background-color": "#3a3a3c",
+      color: "#ffffff",
+      font: "700 11px/1.4 Arial, Helvetica, sans-serif",
+      "letter-spacing": "0.02em",
+      "text-transform": "uppercase",
+      "text-decoration": "none",
+      "text-shadow": "none",
+      "vertical-align": "middle",
+      "white-space": "nowrap",
+    };
+    for (const [property, value] of Object.entries(style))
+      badge.style.setProperty(property, value, "important");
+    // Inside a block-level title the pill stays on the title's line.
+    if (link.contains(heading)) heading.append(badge);
+    else link.after(badge);
+    newBadges.set(link, badge);
+    return true;
   }
 
   // Add a warning banner after an unsafe link
@@ -191,6 +232,7 @@ SafeGuard.createLinkRenderer = (getSettings) => {
     clear,
     clearAll,
     highlightLink,
+    addNewBadge,
     addWarningBanner,
     ensureBraveStyles,
   };

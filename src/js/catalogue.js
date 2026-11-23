@@ -9,7 +9,7 @@ SafeGuard.createCatalogue = ({
   const resources = SafeGuard.resources;
   const parser = SafeGuard.guideParser;
   const metadata = SafeGuard.siteMetadata;
-  const { normalizeDomain } = SafeGuard.settings;
+  const { normalizeDomain, isNewListing } = SafeGuard.settings;
   const cacheKeys = [
     "unsafeSites",
     "potentiallyUnsafeSites",
@@ -20,6 +20,8 @@ SafeGuard.createCatalogue = ({
     "fmhyResourceMap",
     "resourceIdentityVersion",
   ];
+  // First-seen times, kept only while a listing still counts as new.
+  const newListingKeys = ["newListings", "newDomainList"];
   const fallbackStarred = resources.buildResourceIndex(
     SafeGuard.curatedResources.base64StarredLinks,
   );
@@ -79,6 +81,45 @@ SafeGuard.createCatalogue = ({
     if (!response.ok)
       throw new Error(`Could not update ${url}: HTTP ${response.status}`);
     return response.text();
+  }
+
+  // The raw guides carry no "new" marker (fmhy.net derives it from Git history
+  // at build time), so compare each refresh with the previous snapshot.
+  function trackAdditions(previousItems, nextItems, recent, now) {
+    const current = new Set(nextItems);
+    const tracked = {};
+    for (const [item, firstSeen] of Object.entries(recent || {})) {
+      if (current.has(item) && isNewListing(firstSeen, now))
+        tracked[item] = firstSeen;
+    }
+    // Without a previous snapshot every listing would look new.
+    if (!previousItems.length) return tracked;
+    const before = new Set(previousItems);
+    const added = nextItems.filter((item) => !before.has(item));
+    // A jump this large means a new guide page or a parser change, not a
+    // batch of FMHY additions.
+    if (added.length > Math.max(50, before.size * 0.05)) return tracked;
+    for (const item of added) tracked[item] ??= now;
+    return tracked;
+  }
+
+  function trackNewListings(previous, next, now = Date.now()) {
+    const list = (value) => (Array.isArray(value) ? value : []);
+    const previousSafe = list(previous.safeSiteList);
+    return {
+      newListings: trackAdditions(
+        previousSafe,
+        next.safeSiteList,
+        previous.newListings,
+        now,
+      ),
+      newDomainList: trackAdditions(
+        resources.extractUniqueHostnamesFromUrls(previousSafe),
+        next.safeDomainList,
+        previous.newDomainList,
+        now,
+      ),
+    };
   }
 
   async function download() {
@@ -152,7 +193,11 @@ SafeGuard.createCatalogue = ({
     // Concurrent popup, startup and alarm requests share one complete refresh.
     if (!refreshPromise) {
       refreshPromise = (async () => {
-        const next = await download();
+        const downloaded = await download();
+        const next = {
+          ...downloaded,
+          ...trackNewListings(snapshot, downloaded),
+        };
         const nextIndexes = compile(next);
         await storage.set(next);
         snapshot = next;
@@ -169,7 +214,7 @@ SafeGuard.createCatalogue = ({
   async function initialize() {
     await SafeGuard.settings.initialize(storage);
     await loadOverrides();
-    const stored = await storage.get(cacheKeys);
+    const stored = await storage.get([...cacheKeys, ...newListingKeys]);
     const currentIdentity =
       stored.resourceIdentityVersion === config.resourceIdentityVersion;
     apply(
@@ -180,6 +225,8 @@ SafeGuard.createCatalogue = ({
             safeSiteList: [],
             starredSites: [],
             fmhyResourceMap: {},
+            newListings: {},
+            newDomainList: {},
           },
     );
     // Older versions did not persist the compact indexes used by content scripts.
@@ -283,8 +330,12 @@ SafeGuard.createCatalogue = ({
     if (typeof url !== "string" || !/^https?:\/\//i.test(url)) return result;
     try {
       const domain = new URL(url).hostname;
+      const firstSeen = ["safe", "starred"].includes(result.status)
+        ? snapshot.newListings?.[result.matchedUrl]
+        : undefined;
       return {
         ...result,
+        isNew: isNewListing(firstSeen),
         fmhyUrl: result.matchedUrl
           ? snapshot.fmhyResourceMap?.[
               resources.normalizeResourceUrl(result.matchedUrl)

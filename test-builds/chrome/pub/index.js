@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statusIcon = document.getElementById("status-icon");
   const statusMessage = document.getElementById("status-message");
   const fmhyResourceLink = document.getElementById("fmhy-resource-link");
+  const newBadge = document.getElementById("new-badge");
   const errorMessage = document.getElementById("error-message");
   const reasonContainer = document.getElementById("reason-container");
   const reasonContent = document.getElementById("reason-content");
@@ -83,7 +84,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Apply theme
-  const { theme } = await SafeGuard.settings.read(browserAPI.storage.local);
+  const { theme, showNewBadges } = await SafeGuard.settings.read(
+    browserAPI.storage.local,
+  );
   SafeGuard.settings.applyTheme(theme);
 
   // Wait for i18n to be ready
@@ -161,6 +164,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         response.inviteCode,
         response.fmhyUrl,
         response.matchedUrl,
+        response.isNew,
       );
     } catch (error) {
       console.error("Error checking site status:", error);
@@ -177,8 +181,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     inviteCode,
     fmhyUrl,
     resourceUrl,
+    isNew = false,
   ) {
     let message;
+    newBadge.classList.toggle(
+      "visible",
+      Boolean(
+        isNew && showNewBadges && (status === "safe" || status === "starred"),
+      ),
+    );
 
     if (fmhyUrl && (status === "safe" || status === "starred")) {
       fmhyResourceLink.href = fmhyUrl;

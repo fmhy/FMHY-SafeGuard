@@ -226,3 +226,68 @@ test("FMHY guide highlights the matching resource and consumes its pending reque
   );
   assert.equal(browser.storage.data.pendingFmhyHighlight, undefined);
 });
+
+test("recently added domains get one neutral NEW pill beside the result title", async (t) => {
+  const recent = Date.now() - 60000;
+  const env = await searchPage(
+    "www.bing.com",
+    {
+      safeDomainList: ["safe.example", "fresh.example"],
+      newDomainList: { "fresh.example": recent, "safe.example": 0 },
+    },
+    '<li><a class="tilk" href="https://fresh.example/">fresh.example</a><h2><a href="https://fresh.example/">Fresh</a></h2></li>' +
+      '<li><h2><a href="https://fresh.example/more">Fresh again</a></h2></li>' +
+      '<li><h2><a href="https://safe.example/">Old listing</a></h2></li>',
+  );
+  t.after(() => env.window.close());
+  const badges = env.document.querySelectorAll(".fmhy-new-badge");
+  assert.equal(badges.length, 1);
+  const [badge] = badges;
+  assert.equal(badge.textContent, "New");
+  assert.equal(badge.previousElementSibling.textContent, "Fresh");
+  assert.equal(
+    badge.style.getPropertyValue("background-color"),
+    "rgb(58, 58, 60)",
+  );
+  assert.equal(
+    badge.style.getPropertyPriority("background-color"),
+    "important",
+  );
+
+  await env.browser.storage.set({ showNewBadges: false });
+  await env.browser.api.storage.onChanged.emit({ showNewBadges: {} }, "local");
+  await settle();
+  assert.equal(env.document.querySelector(".fmhy-new-badge"), null);
+});
+
+test("Google NEW pills sit inside the title heading and expire on display", async (t) => {
+  const days = 7;
+  const env = await searchPage(
+    "www.google.com",
+    {
+      safeDomainList: ["fresh.example", "stale.example"],
+      newDomainList: {
+        "fresh.example": Date.now() - 1000,
+        "stale.example": Date.now() - days * 86400000 - 1,
+      },
+    },
+    '<div><a href="https://fresh.example/"><h3>Fresh</h3><cite>fresh.example</cite></a></div>' +
+      '<div><a href="https://stale.example/"><h3>Stale</h3></a></div>',
+  );
+  t.after(() => env.window.close());
+  const badges = env.document.querySelectorAll(".fmhy-new-badge");
+  assert.equal(badges.length, 1);
+  assert.equal(badges[0].parentElement.tagName, "H3");
+  assert.equal(badges[0].parentElement.textContent, "FreshNew");
+});
+
+test("NEW pills never decorate unsafe results", async (t) => {
+  const env = await searchPage(
+    "www.bing.com",
+    { newDomainList: { "unsafe.example": Date.now() } },
+    '<h2><a href="https://unsafe.example/">Unsafe</a></h2>',
+  );
+  t.after(() => env.window.close());
+  assert.equal(env.document.querySelector(".fmhy-new-badge"), null);
+  assert.ok(env.document.querySelector(".fmhy-unsafe-badge"));
+});

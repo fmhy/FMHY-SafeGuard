@@ -39,6 +39,8 @@ SafeGuard.config = (() => {
   const notesBaseURL =
     "https://raw.githubusercontent.com/fmhy/edit/main/docs/.vitepress/notes/";
   const resourceIdentityVersion = 2;
+  // fmhy.net shows its NEW pill for entries added in the last 7 days.
+  const newListingDays = 7;
   // Each tenant has its own site; the provider's rating must not extend to it.
   const subdomainHostingHosts = new Set(["neocities.org"]);
   const sharedResourceHosts = new Set([
@@ -115,6 +117,7 @@ SafeGuard.config = (() => {
     unsafeReasonsURL,
     notesBaseURL,
     resourceIdentityVersion,
+    newListingDays,
     subdomainHostingHosts,
     sharedResourceHosts,
     searchEngines,

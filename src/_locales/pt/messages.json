@@ -205,6 +205,10 @@
     "message": "Mostrar banners de aviso ao lado de links inseguros",
     "description": "Setting option"
   },
+  "showNewBadges": {
+    "message": "Mostrar selos NOVO em sites adicionados ao FMHY nos últimos 7 dias",
+    "description": "Setting option"
+  },
   "safeLinkColor": {
     "message": "Cor do link seguro",
     "description": "Setting option"
@@ -380,5 +384,13 @@
   "updateFailed": {
     "message": "Falha na atualização. Tente novamente.",
     "description": "Filterlist update failed message"
+  },
+  "newBadge": {
+    "message": "Novo",
+    "description": "Pill shown next to sites recently added to FMHY"
+  },
+  "newBadgeTitle": {
+    "message": "Adicionado recentemente ao FMHY. Não é uma classificação de segurança separada.",
+    "description": "Tooltip for the NEW pill"
   }
 }

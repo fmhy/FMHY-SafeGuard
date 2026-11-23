@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     highlightTrusted: ["highlightTrustedToggle", "checked"],
     highlightUntrusted: ["highlightUntrustedToggle", "checked"],
     showWarningBanners: ["showWarningBannersToggle", "checked"],
+    showNewBadges: ["showNewBadgesToggle", "checked"],
     trustedColor: ["trustedColor", "value"],
     untrustedColor: ["untrustedColor", "value"],
     userTrustedDomains: ["trustedDomains", "value"],

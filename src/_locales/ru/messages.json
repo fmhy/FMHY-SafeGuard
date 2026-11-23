@@ -205,6 +205,10 @@
     "message": "Показывать предупреждающие баннеры рядом с небезопасными ссылками",
     "description": "Setting option"
   },
+  "showNewBadges": {
+    "message": "Показывать значки НОВОЕ у сайтов, добавленных в FMHY за последние 7 дней",
+    "description": "Setting option"
+  },
   "safeLinkColor": {
     "message": "Цвет безопасной ссылки",
     "description": "Setting option"
@@ -380,5 +384,13 @@
   "updateFailed": {
     "message": "Ошибка обновления. Попробуйте ещё раз.",
     "description": "Filterlist update failed message"
+  },
+  "newBadge": {
+    "message": "Новое",
+    "description": "Pill shown next to sites recently added to FMHY"
+  },
+  "newBadgeTitle": {
+    "message": "Недавно добавлено в FMHY. Это не отдельная оценка безопасности.",
+    "description": "Tooltip for the NEW pill"
   }
 }

@@ -205,6 +205,10 @@
     "message": "危険なリンクの横に警告バナーを表示",
     "description": "Setting option"
   },
+  "showNewBadges": {
+    "message": "過去7日間にFMHYに追加されたサイトに新着バッジを表示",
+    "description": "Setting option"
+  },
   "safeLinkColor": {
     "message": "安全なリンクの色",
     "description": "Setting option"
@@ -380,5 +384,13 @@
   "updateFailed": {
     "message": "更新に失敗しました。もう一度お試しください。",
     "description": "Filterlist update failed message"
+  },
+  "newBadge": {
+    "message": "新着",
+    "description": "Pill shown next to sites recently added to FMHY"
+  },
+  "newBadgeTitle": {
+    "message": "最近FMHYに追加されました。別の安全性評価ではありません。",
+    "description": "Tooltip for the NEW pill"
   }
 }

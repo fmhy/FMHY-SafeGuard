@@ -6,14 +6,16 @@
 
   // Cross-browser compatibility shim
   const browserAPI = typeof browser !== "undefined" ? browser : chrome;
-  const { normalizeDomain, highlightKeys } = SafeGuard.settings;
+  const { normalizeDomain, highlightKeys, isNewListing } = SafeGuard.settings;
   const { searchEngines } = SafeGuard.config;
   const renderer = SafeGuard.createLinkRenderer(() => settings);
-  const { highlightLink, addWarningBanner, ensureBraveStyles } = renderer;
+  const { highlightLink, addNewBadge, addWarningBanner, ensureBraveStyles } =
+    renderer;
 
   // Track processed elements to avoid reprocessing
   let processedLinks = new WeakMap();
   const processedDomains = new Set();
+  const newBadgeDomains = new Set();
   const highlightCountTrusted = new Map();
   const highlightCountUntrusted = new Map();
 
@@ -30,6 +32,7 @@
   let userTrusted = new Set();
   let userUntrusted = new Set();
   let unsafeReasons = {};
+  let newDomains = {};
 
   // FMHY domains to exclude
   const fmhyDomains = [
@@ -66,6 +69,7 @@
         "unsafeDomainList",
         "safeDomainList",
         "unsafeReasons",
+        "newDomainList",
       ]);
       let unsafeDomainList = Array.isArray(compactData.unsafeDomainList)
         ? compactData.unsafeDomainList
@@ -94,6 +98,11 @@
       if (compactData.unsafeReasons) {
         unsafeReasons = compactData.unsafeReasons;
       }
+      newDomains =
+        compactData.newDomainList &&
+        typeof compactData.newDomainList === "object"
+          ? compactData.newDomainList
+          : {};
 
       // Apply user overrides
       applyUserOverrides();
@@ -183,8 +192,10 @@
           for (const node of mutation.removedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE) {
               if (
-                node.matches(".fmhy-unsafe-badge, .fmhy-badge-wrapper") ||
-                node.querySelector(".fmhy-unsafe-badge")
+                node.matches(
+                  ".fmhy-unsafe-badge, .fmhy-new-badge, .fmhy-badge-wrapper",
+                ) ||
+                node.querySelector(".fmhy-unsafe-badge, .fmhy-new-badge")
               ) {
                 needsReprocess = true;
                 break;
@@ -299,6 +310,16 @@
           highlightLink(link, "trusted");
           incrementHighlightCount(highlightCountTrusted, linkDomain);
         }
+
+        // One pill per domain keeps sitelinks and repeated results tidy.
+        if (
+          settings.showNewBadges &&
+          !newBadgeDomains.has(linkDomain) &&
+          isNewListing(newDomains[linkDomain]) &&
+          addNewBadge(link, newBadgeLabel, newBadgeTitle)
+        ) {
+          newBadgeDomains.add(linkDomain);
+        }
       }
     } catch (error) {
       console.warn("[FMHY SafeGuard] Error processing link:", error);
@@ -306,6 +327,19 @@
   }
 
   // Helper functions
+  function message(key, fallback) {
+    try {
+      return browserAPI.i18n?.getMessage(key) || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  const newBadgeLabel = message("newBadge", "New");
+  const newBadgeTitle = message(
+    "newBadgeTitle",
+    "Recently added to FMHY. This is not a separate safety rating.",
+  );
+
   function getReasonForDomain(hostname) {
     const domain = hostname.replace(/^www\./, "").toLowerCase();
     // Try exact match first
@@ -330,6 +364,7 @@
     "unsafeDomainList",
     "safeDomainList",
     "unsafeReasons",
+    "newDomainList",
   ]);
   browserAPI.storage.onChanged.addListener((changes, area) => {
     if (
@@ -364,6 +399,7 @@
       renderer.clearAll();
       processedLinks = new WeakMap();
       processedDomains.clear();
+      newBadgeDomains.clear();
       highlightCountTrusted.clear();
       highlightCountUntrusted.clear();
       processPage();

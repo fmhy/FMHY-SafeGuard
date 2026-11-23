@@ -133,6 +133,32 @@ body {
   color: var(--accent-color);
 }
 
+/* Mirrors fmhy.net's NEW pill: neutral grey, never a safety color. */
+.new-badge {
+  display: none;
+  margin-top: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background-color: #e5e5ea;
+  color: #1c1c1e;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.new-badge.visible {
+  display: inline-block;
+}
+
+body[data-theme="dark"] .new-badge,
+body[data-theme="amoled"] .new-badge {
+  background-color: #3a3a3c;
+  color: #ffffff;
+}
+
 #fmhy-resource-link {
   display: none;
   margin-top: 2px;
