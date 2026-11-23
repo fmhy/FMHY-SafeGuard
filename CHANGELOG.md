@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+## v1.4.6 (11/23/2026)
+
 #### **🔧 Enhancements**
 
 - Added a NEW badge for sites recently added to FMHY, styled like the grey NEW pill on fmhy.net. It appears beside the result title in search results (once per domain) and under the status in the popup. It is not a safety rating and never uses the safe-link color. Settings → Link Highlighting has a toggle to hide it.
   - The raw wiki files carry no "new" marker (fmhy.net computes it from Git history when the site is built), so SafeGuard compares each filterlist update with the previous one and records when each listing first appeared. Badges expire 7 days after that, matching fmhy.net. The first download after installing is treated as a baseline, so nothing is marked new on a fresh install. An update that adds an unusually large number of links at once, such as a newly tracked guide page, also resets the baseline instead of marking everything new.
 - The Halloween theme now turns on automatically each October (October 1–31, local time) on the popup, settings, warning, and welcome pages. For the rest of the year these pages use the standard accents and do not load the Halloween stylesheet or icons.
+
+#### **✅ Validation**
+
+- Automated tests cover first-seen tracking, the fresh-install baseline, expiry, bulk-change resets, search-result and popup rendering, and the settings toggle. In a live Chromium run, SafeGuard's comparison flagged the same 100 resources that fmhy.net marked NEW, with no extras.
 
 ## v1.4.5 (10/02/2026)
 
